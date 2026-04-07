@@ -8,8 +8,8 @@ PRD写作流程工具 - 基于雪花写作法的反向重构
 2. 头脑风暴 - 调用LLM理解核心理念，找出差异化定位
 3. 反向重构 - 从复杂到简洁，提炼核心，拆分细节
 4. 用户模拟 - LLM模拟用户阅读，提出改进建议
-5. 统一格式 - 标题、叙事逻辑统一化
-6. 简化完善 - 删除过度设计，保留核心内容
+5. 简化完善 - 删除过度设计，保留核心内容
+6. 统一格式 - 标题、叙事逻辑统一化
 
 使用示例：
     from write_prd import PRDWriter
@@ -258,11 +258,11 @@ def write_prd_with_transparent_cognition(
     print("=== 4. 模拟用户反馈 ===")
     writer.simulate_user()
     
-    print("=== 5. 统一标题格式 ===")
-    writer.unify_titles()
-    
-    print("=== 6. 简化过度设计 ===")
+    print("=== 5. 简化过度设计 ===")
     writer.simplify()
+    
+    print("=== 6. 统一标题格式 ===")
+    writer.unify_titles()
     
     return writer.prd_content
 
