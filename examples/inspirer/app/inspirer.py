@@ -1,12 +1,52 @@
-from datetime import datetime
+import os
+import json
 from pathlib import Path
 from typing import Optional
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenClient = None
+
+
+class Embedder:
+    def __init__(self):
+        self.client = None
+        if os.getenv("OPENAI_API_KEY"):
+            self.client = OpenClient()
+
+    def get_embedding(self, text: str) -> list[float]:
+        if not self.client:
+            raise RuntimeError("OPENAI_API_KEY not set")
+
+        resp = self.client.embeddings.create(
+            model="text-embedding-3-small", input=text[:8000]
+        )
+        return resp.data[0].embedding
+
+    def load_embeddings(self, cache_path: Path) -> dict:
+        if cache_path.exists():
+            with open(cache_path) as f:
+                return json.load(f)
+        return {}
+
+    def save_embeddings(self, cache_path: Path, embeddings: dict):
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_path, "w") as f:
+            json.dump(embeddings, f)
 
 
 class Inspir:
     def __init__(self, journal_path: str = "sample/archive.md"):
         self.journal_path = Path(journal_path)
+        self.cache_path = Path("sample/embeddings.json")
         self.entries = []
+        self.embedder = Embedder()
 
     def load(self):
         content = self.journal_path.read_text()
@@ -28,64 +68,67 @@ class Inspir:
         if current_entry and current_date:
             self.entries.append(current_entry)
 
-    def extract_themes(self, content: str) -> list[str]:
-        keywords = []
-        if "创作" in content or "写" in content:
-            keywords.append("创作")
-        if "灵感" in content:
-            keywords.append("灵感")
-        if "男女" in content or "男主" in content or "女主" in content:
-            keywords.append("人物")
-        if "情绪" in content or "心情" in content:
-            keywords.append("情绪")
-        if "重写" in content:
-            keywords.append("重写")
-        return keywords
+        self._load_embeddings()
 
-    def find_related_entries(self, theme: str, limit: int = 3) -> list[dict]:
-        related = []
+    def _load_embeddings(self):
+        cached = self.embedder.load_embeddings(self.cache_path)
         for entry in self.entries:
-            themes = self.extract_themes(" ".join(entry["content"]))
-            if theme in themes:
-                related.append(entry)
-            if len(related) >= limit:
-                break
-        return related
+            date = entry["date"]
+            if date in cached:
+                entry["embedding"] = cached[date]
+            else:
+                text = " ".join(entry["content"])
+                try:
+                    entry["embedding"] = self.embedder.get_embedding(text)
+                except RuntimeError:
+                    entry["embedding"] = None
+
+        self._save_embeddings()
+
+    def _save_embeddings(self):
+        if np is None:
+            return
+        cached = {entry["date"]: entry.get("embedding") for entry in self.entries}
+        cached = {k: v for k, v in cached.items() if v is not None}
+        self.embedder.save_embeddings(self.cache_path, cached)
+
+    def cosine_similarity(self, a: list[float], b: list[float]) -> float:
+        if np is None:
+            raise ImportError("numpy not installed")
+        a = np.array(a)
+        b = np.array(b)
+        return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+
+    def find_related_entries(self, query: str, limit: int = 3) -> list[dict]:
+        try:
+            query_emb = self.embedder.get_embedding(query)
+        except RuntimeError:
+            return []
+
+        scored = []
+        for entry in self.entries:
+            if entry.get("embedding"):
+                sim = self.cosine_similarity(query_emb, entry["embedding"])
+                scored.append((sim, entry))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [entry for _, entry in scored[:limit]]
 
     def suggest(self, current_theme: Optional[str] = None) -> dict:
         if not self.entries:
             return {"status": "no_entries", "message": "请先添加创作日记"}
 
         latest = self.entries[0]
-        themes = self.extract_themes(" ".join(latest["content"]))
+        latest_text = " ".join(latest["content"])
 
-        if current_theme:
-            target_theme = current_theme
-        else:
-            target_theme = themes[0] if themes else "创作"
-
-        related = self.find_related_entries(target_theme)
+        related = self.find_related_entries(latest_text)
 
         return {
             "status": "ok",
             "current_entry": latest,
-            "detected_themes": themes,
             "related_entries": related,
-            "suggestion": self.generate_suggestion(target_theme, related),
+            "related_count": len(related),
         }
-
-    def generate_suggestion(self, theme: str, related: list[dict]) -> str:
-        if not related:
-            return f"最近没有关于「{theme}」的记录，建议开始记录相关灵感"
-
-        messages = {
-            "创作": "可以参考过去的创作状态，调整当前创作节奏",
-            "灵感": "这些片段可能触发新的灵感火花",
-            "人物": "可以进一步发展这些人物关系",
-            "情绪": "这种情绪状态值得在作品中表达",
-            "重写": "这是一个重写旧作的好时机",
-        }
-        return messages.get(theme, f"可以继续探索「{theme}」相关的主题")
 
 
 if __name__ == "__main__":
@@ -95,6 +138,8 @@ if __name__ == "__main__":
 
     print(f"状态: {result['status']}")
     print(f"最新日记: {result['current_entry']['date']}")
-    print(f"检测到主题: {result['detected_themes']}")
-    print(f"建议: {result['suggestion']}")
-    print(f"相关记录数: {len(result['related_entries'])}")
+    print(f"相关记录数: {result['related_count']}")
+    if result.get("related_entries"):
+        print("相关记录:")
+        for entry in result["related_entries"]:
+            print(f"  - {entry['date']}")
