@@ -2,51 +2,63 @@ import os
 import json
 from pathlib import Path
 from typing import Optional
-
-try:
-    import numpy as np
-except ImportError:
-    np = None
-
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenClient = None
+from collections import Counter
+import math
 
 
-class Embedder:
+class TFIDF:
     def __init__(self):
-        self.client = None
-        if os.getenv("OPENAI_API_KEY"):
-            self.client = OpenClient()
+        self.corpus = []
+        self.vocab = set()
+        self.idf = {}
 
-    def get_embedding(self, text: str) -> list[float]:
-        if not self.client:
-            raise RuntimeError("OPENAI_API_KEY not set")
+    def tokenize(self, text: str) -> list[str]:
+        return list(text)
 
-        resp = self.client.embeddings.create(
-            model="text-embedding-3-small", input=text[:8000]
-        )
-        return resp.data[0].embedding
+    def fit(self, texts: list[str]):
+        self.corpus = texts
+        for text in texts:
+            self.vocab.update(self.tokenize(text))
 
-    def load_embeddings(self, cache_path: Path) -> dict:
-        if cache_path.exists():
-            with open(cache_path) as f:
-                return json.load(f)
-        return {}
+        df = Counter()
+        for text in texts:
+            for word in set(self.tokenize(text)):
+                df[word] += 1
 
-    def save_embeddings(self, cache_path: Path, embeddings: dict):
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(cache_path, "w") as f:
-            json.dump(embeddings, f)
+        n = len(texts)
+        for word, freq in df.items():
+            self.idf[word] = math.log(n / freq)
+
+    def get_vector(self, text: str) -> dict[str, float]:
+        tokens = self.tokenize(text)
+        tf = Counter(tokens)
+        vec = {}
+        for word, freq in tf.items():
+            if word in self.idf:
+                vec[word] = freq * self.idf[word]
+        return vec
+
+    def cosine_similarity(self, a: dict[str, float], b: dict[str, float]) -> float:
+        common = set(a.keys()) & set(b.keys())
+        if not common:
+            return 0.0
+
+        dot = sum(a[w] * b[w] for w in common)
+        norm_a = math.sqrt(sum(v * v for v in a.values()))
+        norm_b = math.sqrt(sum(v * v for v in b.values()))
+
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
 
 
 class Inspir:
     def __init__(self, journal_path: str = "sample/archive.md"):
         self.journal_path = Path(journal_path)
-        self.cache_path = Path("sample/embeddings.json")
+        self.cache_path = Path("sample/tfidf_cache.json")
         self.entries = []
-        self.embedder = Embedder()
+        self.tfidf = TFIDF()
+        self._use_embedding = False
 
     def load(self):
         content = self.journal_path.read_text()
@@ -68,48 +80,23 @@ class Inspir:
         if current_entry and current_date:
             self.entries.append(current_entry)
 
-        self._load_embeddings()
+        self._init_search()
 
-    def _load_embeddings(self):
-        cached = self.embedder.load_embeddings(self.cache_path)
+    def _init_search(self):
+        texts = [" ".join(e["content"]) for e in self.entries]
+        self.tfidf.fit(texts)
+
         for entry in self.entries:
-            date = entry["date"]
-            if date in cached:
-                entry["embedding"] = cached[date]
-            else:
-                text = " ".join(entry["content"])
-                try:
-                    entry["embedding"] = self.embedder.get_embedding(text)
-                except RuntimeError:
-                    entry["embedding"] = None
-
-        self._save_embeddings()
-
-    def _save_embeddings(self):
-        if np is None:
-            return
-        cached = {entry["date"]: entry.get("embedding") for entry in self.entries}
-        cached = {k: v for k, v in cached.items() if v is not None}
-        self.embedder.save_embeddings(self.cache_path, cached)
-
-    def cosine_similarity(self, a: list[float], b: list[float]) -> float:
-        if np is None:
-            raise ImportError("numpy not installed")
-        a = np.array(a)
-        b = np.array(b)
-        return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+            text = " ".join(entry["content"])
+            entry["vector"] = self.tfidf.get_vector(text)
 
     def find_related_entries(self, query: str, limit: int = 3) -> list[dict]:
-        try:
-            query_emb = self.embedder.get_embedding(query)
-        except RuntimeError:
-            return []
+        query_vec = self.tfidf.get_vector(query)
 
         scored = []
         for entry in self.entries:
-            if entry.get("embedding"):
-                sim = self.cosine_similarity(query_emb, entry["embedding"])
-                scored.append((sim, entry))
+            sim = self.tfidf.cosine_similarity(query_vec, entry.get("vector", {}))
+            scored.append((sim, entry))
 
         scored.sort(key=lambda x: x[0], reverse=True)
         return [entry for _, entry in scored[:limit]]
@@ -128,6 +115,7 @@ class Inspir:
             "current_entry": latest,
             "related_entries": related,
             "related_count": len(related),
+            "method": "tfidf" if not self._use_embedding else "embedding",
         }
 
 
@@ -138,6 +126,7 @@ if __name__ == "__main__":
 
     print(f"状态: {result['status']}")
     print(f"最新日记: {result['current_entry']['date']}")
+    print(f"方法: {result['method']}")
     print(f"相关记录数: {result['related_count']}")
     if result.get("related_entries"):
         print("相关记录:")
