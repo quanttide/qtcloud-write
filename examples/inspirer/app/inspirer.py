@@ -4,7 +4,7 @@ from typing import Optional
 
 
 class Inspir:
-    def __init__(self, journal_path: str = "sample/journal.md"):
+    def __init__(self, journal_path: str = "sample/archive.md"):
         self.journal_path = Path(journal_path)
         self.entries = []
 
