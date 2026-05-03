@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>叙事结构分析 - 对比阅读</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5; color: #1a1a1a; line-height: 1.8;
+  }
+  .header { max-width: 1100px; margin: 0 auto; padding: 24px 24px 0; }
+  .header h1 { font-size: 20px; font-weight: 600; color: #333; }
+  .header p { font-size: 13px; color: #888; margin-top: 2px; }
+
+  .container { max-width: 1100px; margin: 16px auto 48px; padding: 0 24px; }
+
+  .pair {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .pair:last-child { border-bottom: none; }
+
+  .col { width: 50%; padding: 16px 20px; }
+  .col-left { background: #fff; border-right: 1px solid #eee; }
+  .col-right { background: #f8faff; }
+
+  .col-header {
+    padding: 10px 20px; font-size: 12px; font-weight: 600; color: #666;
+    letter-spacing: 1px; border-bottom: 2px solid #ddd;
+  }
+  .col-left .col-header { background: #fafafa; }
+  .col-right .col-header { background: #f0f5ff; }
+
+  .pair-header {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+  }
+  .pair-header .col { padding: 10px 20px; font-size: 12px; font-weight: 600; color: #666; letter-spacing: 1px; }
+  .pair-header .col-left { background: #fafafa; }
+  .pair-header .col-right { background: #f0f5ff; }
+
+  .article-title { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; line-height: 1.5; }
+  .article-h2 { font-size: 14px; font-weight: 600; color: #2a2a2a; margin-bottom: 8px; line-height: 1.6; }
+  .article-p { font-size: 13px; color: #333; margin-bottom: 6px; line-height: 1.8; }
+  .article-p:last-child { margin-bottom: 0; }
+
+  .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 3px; margin-bottom: 8px; }
+  .tag-qi { background: #e8f5e9; color: #2e7d32; }
+  .tag-cheng { background: #e3f2fd; color: #1565c0; }
+  .tag-zhuan { background: #fff3e0; color: #e65100; }
+  .tag-he-1 { background: #f3e5f5; color: #7b1fa2; }
+  .tag-he-2 { background: #fce4ec; color: #c62828; }
+
+  .ana { font-size: 13px; line-height: 1.8; color: #333; }
+  .ana .label { color: #555; }
+  .ana .label::after { content: "："; }
+  .ana .highlight { font-weight: 600; color: #1a1a1a; }
+  .ana-line { margin-bottom: 4px; }
+  .ana-block { margin-bottom: 8px; }
+  .ana-block:last-child { margin-bottom: 0; }
+
+  .empty { color: #bbb; font-style: italic; text-align: center; padding: 4px 0; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>叙事结构分析</h1>
+  <p>原文按段落分块，右侧展示对应叙事分析</p>
+</div>
+
+<div class="container">
+  <div class="pair-header">
+    <div class="col col-left">原始文本</div>
+    <div class="col col-right">叙事分析</div>
+  </div>
+
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-title">构建游戏启发了我的产品设计理念</div>
+      <div class="article-p">五一假期趁着有空启动了战棋游戏《豫东战役》的尝试。在 B 站和小红书分别发了帖子介绍，这篇文章就不详细写了。这篇文章想说一说一些动机和心得。</div>
+    </div>
+    <div class="col col-right">
+      <div class="empty">引言，无分析</div>
+    </div>
+  </div>
+
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-h2">使用游戏研发切换到全景视角</div>
+      <div class="article-p">最近一段时间的产品研发让我总是陷入一种"不知道自己在做什么的僵局"。为了让产品效果可以落地，我被迫从一些具体场景出发，然后面临着大量的不确定性。</div>
+      <div class="article-p">包括但是不限于，做出来发现没用，做出来发现不可拓展，做出来发现价值不够，等等。我晚上总是在反思打转，觉得这样不对。</div>
+      <div class="article-p">那如果我抛弃掉这些具体场景，直接从全景图出发呢？没办法验证。所以我需要一个实验室。</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-qi">起</span>
+      <div class="ana">
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">叙事动作</span><span class="highlight">抛出痛点，提出假设。</span></div>
+          <div class="ana-line"><span class="label">严密性支撑</span><span class="highlight">不粉饰缺陷，严格遵循因果递进。</span></div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line">作者没有泛泛而谈"工作难做"，而是精准定义了死局的原因——过度陷入具体场景，必然导致"无用、不可拓展、价值低"的后果。</div>
+          <div class="ana-line">随即提出"切换全景视角"的假设，但立刻抛出现实中的硬约束——"没办法验证"。他诚实面对了这个矛盾，没有用空想跳过困难，从而让后续寻找"实验室"的行为成为唯一的逻辑必然。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-p">小说已经无法满足我精确地验证建模思路的需求了。所以我又转向了游戏。先是模拟经营游戏，找到了一个合适的视角和叙事方式。</div>
+      <div class="article-p">后来又觉得还是不够准确。因为我知道我的很多思维习惯来源于军事资料和相关游戏，所以尝试了战棋游戏。一下子找对了方向，思路开始打开了。</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-cheng">承</span>
+      <div class="ana">
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">叙事动作</span><span class="highlight">跨界寻找解法，最终锁定战棋游戏。</span></div>
+          <div class="ana-line"><span class="label">严密性支撑</span><span class="highlight">每一步演进都由上一步的局限性倒逼。</span></div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line">为什么不写小说？<span style="color:#999">→</span> 约束条件：小说不够精确，无法验证建模。</div>
+          <div class="ana-line">为什么选模拟经营？<span style="color:#999">→</span> 解决了精确问题，找到了视角和叙事。</div>
+          <div class="ana-line">为什么又走向战棋？<span style="color:#999">→</span> 发现模拟经营的"休闲属性惯性"是阻碍，而作者自身思维源自军事资料，战棋能精准克服这一局限性。</div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">逻辑效果</span>读者不会觉得"做游戏"是突发奇想，而是看到一条被层层过滤后留下的唯一通路。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-h2">用"可玩"验证全景图可用</div>
+      <div class="article-p">可玩的游戏需要具备两个基本特征。一个特征是要有具备良好反馈的游戏机制或者游戏玩法，一个是要具备意义感和叙事能力。</div>
+      <div class="article-p">这两项恰恰是我在构建现实世界用的产品给用户传递"智能感"所必须的。因此我在尝试找到一条迁移游戏研发成果到产品研发成果的道路。</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-zhuan">转</span>
+      <div class="ana">
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">叙事动作</span><span class="highlight">揭示游戏与产品设计的底层连接。</span></div>
+          <div class="ana-line"><span class="label">严密性支撑</span><span class="highlight">用"同构等式"死死焊住跨界跳跃的断层。</span></div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line">从"打游戏"到"做 B 端后台"，是一个极易崩塌的逻辑跳跃。作者在此处建立了一个极其严密的逻辑桥梁：</div>
+          <div style="padding-left:14px; border-left:2px solid #e0d0b0; margin:4px 0;">
+            <div class="ana-line">游戏的可玩性 = 机制反馈 + 意义感与叙事</div>
+            <div class="ana-line">产品的智能感 = 交互反馈 + 传递的价值感</div>
+          </div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">逻辑效果</span>证明了这两者不是"感觉相似"，而是"底层元结构一致"。既然结构同构，那么在游戏里的成功经验，在逻辑上就必然可以平移到产品中。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-p">目前初步的方法是：</div>
+      <div style="font-size:13px; color:#333; line-height:1.8; padding-left:4px;">
+        1. 在战棋游戏（quanttide/qtgame-war）里建模找到感觉，比如目前找到了指挥室视角。<br>
+        2. 类似地映射到模拟经营游戏（quanttide/qtgame-tycoon），打破这类游戏的休闲属性带来的惯性。<br>
+        3. 把模拟经营游戏找到的视角翻译成量潮管理后台（quanttide/qtadmin）的产品设计文档，从而进入平台研发流程中。
+      </div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-he-1">合·上</span>
+      <div class="ana">
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">叙事动作</span><span class="highlight">建立三级流水线，产出实际原型。</span></div>
+          <div class="ana-line"><span class="label">严密性支撑</span><span class="highlight">将不可见的"思维"，转化为可追溯的"工程流水线"。</span></div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line">很多方法论死于"悬在半空"，作者用极具工程思维的三步走，完成了逻辑闭环的降维打击：</div>
+          <div style="padding-left:14px; border-left:2px solid #c8b8d0; margin:4px 0;">
+            <div class="ana-line">L1 抽象建模（qtgame-war）：剥离业务，纯粹验证"全景指挥室视角"。</div>
+            <div class="ana-line">L2 逻辑翻译（qtgame-tycoon）：将战棋思维注入，打破休闲惯性，赋予业务属性。</div>
+            <div class="ana-line">L3 实体落地（qtadmin）：翻译成具体的产品设计文档和原型。</div>
+          </div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">逻辑效果</span>给出了具体的代码仓库名称，把"感觉变好了"这种主观描述，变成了"通过 A 加工 B 产出 C"的客观操作规程。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-p">这套方法无痛地验证和迁移了元方法，通过不断提纯和反应提高元方法的质量，从而让正式的研发工作变得异常顺利。</div>
+      <div class="article-p">最明显的改变是，我推翻了过往设计管理后台的思路，直接把视角放在了我的业务经营思维方式上面。</div>
+      <div class="article-p">我的团队一直和我说非常重视学习我的思考方式。思考方式本来就不需要具体的数值呈现，而是需要更多原型。因此我重新构建了一个贴合我的经营思维的原型。计划假期以后让团队上线研究。</div>
+      <div class="article-p">我目前还没有研究明白这套流水线为何如此高效。留作未来继续探究。</div>
+      <div class="article-p">不过可以肯定地是，让工作变好玩的目标又近了一步。</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-he-2">合·下</span>
+      <div class="ana">
+        <div class="ana-block">
+          <div class="ana-line"><span class="label">叙事动作</span><span class="highlight">团队应用新原型，升华"让工作好玩"的主题。</span></div>
+          <div class="ana-line"><span class="label">严密性支撑</span><span class="highlight">以结果倒推，形成完美闭环。</span></div>
+        </div>
+        <div class="ana-block">
+          <div class="ana-line">文章开头设定的"死局"（不知道做什么、陷入具体场景），在结尾给出了确切的"破局结果"（推翻旧思路、研发异常顺利、团队直接吸收经营思维原型）。</div>
+          <div class="ana-line">最后一句"让工作变好玩的目标又近了一步"，不仅是一种情怀，更是对全文核心逻辑的终极概括——因为把产品的底层逻辑变成了可玩的游戏逻辑，所以工作自然变得好玩且高效。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
