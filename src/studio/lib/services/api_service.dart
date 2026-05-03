@@ -27,6 +27,13 @@ class ApiService {
     if (response.statusCode == 200) {
       return Review.fromJson(jsonDecode(response.body));
     }
-    throw Exception('Review failed: ${response.statusCode}');
+
+    String detail = '';
+    try {
+      final body = jsonDecode(response.body);
+      detail = body['detail']?.toString() ?? '';
+    } catch (_) {}
+
+    throw Exception('评审请求失败 ($response.statusCode)${detail.isNotEmpty ? ': $detail' : ''}');
   }
 }

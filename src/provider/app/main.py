@@ -1,9 +1,17 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.models import ArticleIn, Article, ReviewOut, ParagraphReview, Suggestion
 from app.store import style_store
 from app.services.review import review_article
 
 app = FastAPI(title="写作云 Provider", version="0.1")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/review", response_model=ReviewOut)
