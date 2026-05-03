@@ -7,6 +7,9 @@ dependencies = ["fastapi", "uvicorn"]
 [tool.uv.workspace]
 members = ["provider"]
 
+[dependency-groups]
+dev = ["httpx", "pytest"]
+
 [tool.pytest.ini_options]
-testpaths = ["src/provider/tests"]
+testpaths = ["src/provider/tests", "tests"]
 pythonpath = ["src/provider"]
