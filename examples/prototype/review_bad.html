@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>评审页面</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5; color: #1a1a1a; line-height: 1.8;
+  }
+  .header { max-width: 1100px; margin: 0 auto; padding: 24px 24px 0; }
+  .header h1 { font-size: 20px; font-weight: 600; color: #333; }
+  .header p  { font-size: 13px; color: #888; margin-top: 2px; }
+
+  .container { max-width: 1100px; margin: 16px auto 48px; padding: 0 24px; }
+
+  .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+  .tag-qi    { background: #e8f5e9; color: #2e7d32; }
+  .tag-cheng { background: #e3f2fd; color: #1565c0; }
+  .tag-zhuan { background: #fff3e0; color: #e65100; }
+  .tag-he    { background: #f3e5f5; color: #7b1fa2; }
+
+  .pair-header {
+    display: flex; border-bottom: 2px solid #ddd;
+  }
+  .pair-header .col { padding: 10px 20px; font-size: 12px; font-weight: 600; color: #666; letter-spacing: 1px; }
+  .pair-header .col-left  { background: #fafafa; width: 50%; }
+  .pair-header .col-right { background: #f0f5ff; width: 50%; }
+
+  .pair { display: flex; border-bottom: 1px solid #ddd; }
+  .col { width: 50%; padding: 16px 20px; }
+  .col-left  { background: #fff;    border-right: 1px solid #eee; }
+  .col-right { background: #f8faff; }
+
+  .article-title { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+  .article-p     { font-size: 13px; color: #333; margin-bottom: 6px; line-height: 1.8; }
+
+  .ana { font-size: 13px; line-height: 1.8; color: #333; }
+  .ana-line { margin-bottom: 4px; }
+
+  .line-good { margin-top: 8px; padding: 8px 10px; background: #edf7ed; border-left: 3px solid #2e7d32; font-size: 13px; color: #2e7d32; }
+  .line-bad  { margin-top: 8px; padding: 8px 10px; background: #fef0f0; border-left: 3px solid #c62828; font-size: 13px; color: #333; }
+  .line-compare { margin-top: 6px; padding: 8px 10px; background: #f0f5ff; border-left: 3px solid #1565c0; font-size: 13px; color: #555; }
+
+  .label { color: #555; }
+  .label::after { content: "："; }
+
+  .meta { padding: 10px 0; font-size: 13px; color: #555; display: flex; align-items: center; gap: 12px; }
+  .meta strong { font-weight: 600; color: #333; }
+
+  .summary { background: #fff; border: 1px solid #e0e0e0; padding: 20px; margin-top: 20px; }
+  .summary h3 { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 8px; }
+  .summary p  { font-size: 13px; color: #555; margin-bottom: 6px; }
+  .summary ul { padding-left: 18px; }
+  .summary li { font-size: 13px; color: #555; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>评审页面</h1>
+  <p>好文章直接学，差文章逐段对比好在哪里</p>
+</div>
+
+<div class="container">
+
+  <div class="meta">
+    <strong>文章：</strong>千问送20亿奶茶，是"自嗨"还是"赢麻了"？
+    <span class="tag tag-he" style="background:#fce4ec; color:#c62828;">成员草稿</span>
+  </div>
+
+  <div class="summary">
+    <h3>总结</h3>
+    <p>整篇文章<strong>起点不对、数据不准、结论不匹配、收束错位</strong>——但根源只有一个：写作引擎不同。好的文章从个人困境出发推演，这篇从外部热点出发分析。</p>
+    <p style="font-weight:600; color:#333; margin-top:10px;">修改建议</p>
+    <ul>
+      <li><strong>起点</strong>：从"我为什么关注这件事"开始，而非"朋友圈刷屏了"</li>
+      <li><strong>锚点</strong>：加入你与这件事的真实交集</li>
+      <li><strong>数据</strong>：CAC口径修正为25元，标题数字统一</li>
+      <li><strong>收束</strong>：去掉CTA，以认知收束结尾</li>
+    </ul>
+  </div>
+
+  <div class="pair-header">
+    <div class="col col-left">原文</div>
+    <div class="col col-right">叙事分析 + 对比</div>
+  </div>
+
+  <!-- 行1：开头 -->
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-title">千问送20亿奶茶，是"自嗨"还是"赢麻了"？</div>
+      <div class="article-p">这两天，你的朋友圈大概率被千问的"免费奶茶券"刷屏了。"邀请1人，双方各得25元免单卡""9小时破千万单""服务器被挤爆"……</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-qi">起</span>
+      <div class="ana">
+        <div class="ana-line"><span class="label">叙事动作</span>用热点事件"朋友圈刷屏"开场，制造话题悬念</div>
+      </div>
+      <div class="line-bad">
+        <strong>坏：</strong>起点是外部热点而非个人困境。
+      </div>
+      <div class="line-compare">
+        <strong>好：</strong>从个人认知缺口出发——"我最近在看各家的AI获客策略。千问这波奶茶券，看完CAC的数据我愣了一下……"
+      </div>
+    </div>
+  </div>
+
+  <!-- 行2：读者定位 -->
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-p">作为吃瓜群众，我们关心的是怎么薅到这杯羊毛；但作为计算机专业大学生、营销人或数据从业者，更该看透这场30亿大促背后的商业逻辑……</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-cheng">承</span>
+      <div class="ana">
+        <div class="ana-line"><span class="label">叙事动作</span>切换读者身份，抛出分析框架CAC/LTV</div>
+      </div>
+      <div class="line-bad">
+        <strong>坏：</strong>框架是"告诉读者要用什么分析"，而非"我自己用它分析了什么"。
+      </div>
+      <div class="line-compare">
+        <strong>好：</strong>"我拿CAC一算，发现这里不太对——50块拉来一个人，LTV到底能不能回本？让我慢慢拆。"
+      </div>
+    </div>
+  </div>
+
+  <!-- 行3：CAC计算 -->
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-p">千问的规则很简单：老用户邀请新用户，双方各得一张25元无门槛免单卡，成功邀请1次，激励成本就是50元。这50元，就是千问此次活动的基准CAC……全链路成本的实际CAC约为60-80元。</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-zhuan">转</span>
+      <div class="ana">
+        <div class="ana-line"><span class="label">叙事动作</span>拆解CAC三种计算口径</div>
+      </div>
+      <div class="line-bad">
+        <strong>坏：</strong>口径算错了。老用户的25元是留存激励，不应计入CAC——实际CAC是25元而非50元。基于50元的所有推论全部站不住脚。标题"20亿"和正文"30亿"也矛盾。
+      </div>
+      <div class="line-compare">
+        <strong>好：</strong>"先算一笔账：新用户25元，老用户的25元不算获客成本——那是留存预算。所以实际CAC是25元，不是50。这个数差一倍，结论完全不同。"
+      </div>
+    </div>
+  </div>
+
+  <!-- 行4：结论 + CTA -->
+  <div class="pair">
+    <div class="col col-left">
+      <div class="article-p">短期来看，单用户的佣金收益微乎其微，LTV远低于50元的CAC。只有在乐观场景下，千问的长期LTV才能覆盖50元的CAC。千问砸20亿送奶茶，看似是"烧钱狂欢"，实则是一场精准的"战略布局"。</div>
+      <div class="article-p">如果想深入学习……关注公众号，回复"数据科学"加入交流群。</div>
+    </div>
+    <div class="col col-right">
+      <span class="tag tag-he">合</span>
+      <div class="ana">
+        <div class="ana-line"><span class="label">叙事动作</span>给出结论"精准战略布局"，引导CTA</div>
+      </div>
+      <div class="line-bad">
+        <strong>坏：</strong>两处硬伤：结论"精准布局"与前面的"短期LTV远低于CAC"矛盾；结尾跳转到产品推广，破坏了叙事完整性。
+      </div>
+      <div class="line-compare">
+        <strong>好：</strong>认知收束——"算到这里我老实说，我不确定这50块能不能回来。但至少下次看到类似的裂变，我知道该看哪些数了。"不推课程。
+      </div>
+      <div class="line-compare">
+        ✅ 创始人写法：认知收束——"算到这里我老实说，我不确定这50块能不能回来。但至少下次看到类似的裂变，我知道该看哪些数了。"不推课程。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
