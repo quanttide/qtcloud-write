@@ -2,10 +2,3 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
-
-# Flutter / Dart
-.dart_tool/
-.packages
-build/
-*.js_
-*.map
