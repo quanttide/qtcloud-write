@@ -9,13 +9,13 @@
 #### 已完成
 
 - 场景定义：BRD/PRD 完成，CEO 助理角色确立
-- 输入 fixture：article1.md、article2.md、article3.md
-- 分析输出 fixture：review1.md、review2.md、review3.md
-- 风格分析：style.md（三级抽象模型，三篇文章验证）
+- 输入 fixture：article1.md、article2.md、article3.md、article4.md
+- 分析输出 fixture：review1.md、review2.md、review3.md、review4.md
+- 风格分析：style.md（工作札记三级抽象模型 + 品牌故事例示模型初稿）
 - 分析原型：原文段落 ↔ 叙事分析对照展示
 
 #### 待验证
 
-1. **风格积累验证（进展中）**
-   - 状态：三篇文章分析完成，风格模型 v1 已建立（三级抽象 + 三个维度）。五种手法基本稳定，但 article3 的"对话驱动"机制尚未归位。
-   - 验收：基于更多 CEO 文章，判断对话驱动是第三种变体还是独立手法。
+1. **品牌故事模型收敛**
+   - 状态：工作札记类型已收敛（三级抽象模型，三篇验证）。品牌故事类型仅 a4 一篇验证，模型为初稿（判断→多例平行印证）。
+   - 验收：积累更多品牌故事文章，迭代模型。
