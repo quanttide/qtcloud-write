@@ -5,7 +5,7 @@
 | 文档 | 认知角色 | 内容概要 |
 |------|----------|----------|
 | [ROADMAP.md](ROADMAP.md) | 方向 | 目标 + 行动列表，不承载状态回顾 |
-| [docs/index.md](docs/index.md) | 架构 | 产品概述（场景-困境-救援） |
+| [docs/index.md](docs/index.md) | 架构 | 场景—困境—救援—新生 |
 | [docs/brd/index.md](docs/brd/index.md) | 业务 | 为什么做、业务场景、问题分析 |
 | [docs/prd/index.md](docs/prd/index.md) | 需求 | 核心用户故事、验收标准 |
 | [docs/pmd/index.md](docs/pmd/index.md) | 管理 | 当前阶段、待验证方向 |
