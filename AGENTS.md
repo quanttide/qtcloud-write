@@ -10,6 +10,10 @@
 | [docs/prd/index.md](docs/prd/index.md) | 需求 | 核心用户故事、验收标准 |
 | [docs/pmd/index.md](docs/pmd/index.md) | 管理 | 当前阶段、待验证方向 |
 
+## 执行约束
+
+发布 Release 时，必须加载主仓库 `devops-release` Skill 并按工作流**逐行执行**，不可跳过预检查。子模块有独立 CHANGELOG（`src/provider/CHANGELOG.md`、`src/studio/CHANGELOG.md`），对应各自 tag（`provider/v*`、`studio/v*`），发布时分别检查。
+
 ## 思考方式
 
 ### 演化路径
