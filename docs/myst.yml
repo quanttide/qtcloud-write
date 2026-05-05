@@ -13,8 +13,8 @@ project:
     - title: PRD（产品需求文档）
       children:
         - file: prd/index.md
-        - file: prd/discern.md
-        - file: prd/inherit.md
+        - file: prd/aware.md
+        - file: prd/review.md
     - title: ADD（架构设计文档）
       children:
         - file: add/index.md

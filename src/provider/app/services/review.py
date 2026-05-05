@@ -4,7 +4,7 @@ UNIT_LABELS = ["起", "承", "转", "合"]
 
 
 def review_article(article: Article, is_style_available: bool) -> tuple[list[ParagraphReview], list[dict]]:
-    results = _discern(article)
+    results = _aware(article)
     reviews = []
     suggestions = []
 
@@ -31,7 +31,7 @@ def review_article(article: Article, is_style_available: bool) -> tuple[list[Par
     return reviews, suggestions
 
 
-def _discern(article: Article) -> list[dict]:
+def _aware(article: Article) -> list[dict]:
     n = len(article.paragraphs)
     results = []
     for i, para in enumerate(article.paragraphs):

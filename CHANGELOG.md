@@ -11,7 +11,7 @@
 ### Docs
 
 - BRD: 业务需求文档
-- PRD: 产品需求文档（discern + inherit）
+- PRD: 产品需求文档（aware + review）
 - IxD: 交互设计文档
 - QA: 质量评估文档对齐直觉框架
 - ADD: 架构决策记录
