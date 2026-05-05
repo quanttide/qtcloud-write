@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.0-alpha.2] - 2026-05-05
+
+### Fixtures
+
+- Style 分类重构为读者视角：index.md 入口 + essay/story/brochure 独立定义
+- Brochure 定义更新为"被说服决策"（读者视角）
+- Essay 定义扩展：覆盖外部现象分析（bad1、bad3、bad5、bad6）
+- good/bad 按风格重组到 content/ 下（essay/story/brochure）
+- 废弃 plan.md 删除
+
+### Docs
+
+- Review 从单一评分扩展为分类+分级活动
+- 新增 classify.md：识别文章叙事风格
+- 新增 grade.md：含写得差的人（逐项评分+对照）和写得好的人（风格画像）两个用户故事
+
 ## [0.1.0-alpha.1] - 2025-05-03
 
 ### Testing
