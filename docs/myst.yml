@@ -1,0 +1,32 @@
+# See docs at: https://mystmd.org
+version: 1
+project:
+  title: 量潮写作云
+  description: QtCloud Write 产品文档
+  keywords: []
+  authors: []
+  toc:
+    - file: index.md
+    - title: BRD（业务需求文档）
+      children:
+        - file: brd/index.md
+    - title: PRD（产品需求文档）
+      children:
+        - file: prd/index.md
+        - file: prd/discern.md
+        - file: prd/inherit.md
+    - title: ADD（架构设计文档）
+      children:
+        - file: add/index.md
+    - title: IXD（交互设计文档）
+      children:
+        - file: ixd/index.md
+        - file: ixd/review.md
+    - title: PMD（项目管理文档）
+      children:
+        - file: pmd/index.md
+    - title: QA（质量保证文档）
+      children:
+        - file: qa/index.md
+site:
+  template: book-theme
