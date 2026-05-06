@@ -2,7 +2,7 @@
 name = "qtcloud-write"
 version = "0.1.0-alpha.1"
 requires-python = ">=3.11"
-dependencies = ["fastapi", "uvicorn"]
+dependencies = ["fastapi", "uvicorn", "openai", "pydantic", "pydantic-settings"]
 
 [tool.uv.workspace]
 members = ["provider"]
