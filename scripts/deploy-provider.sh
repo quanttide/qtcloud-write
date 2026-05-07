@@ -1,24 +1,31 @@
 #!/usr/bin/env bash
-# 构建并部署 qtcloud-write-provider 到阿里云 FaaS
 
-set -euo pipefall
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PROVIDER_DIR="$PROJECT_ROOT/src/provider"
 IMAGE_NAME="qtcloud-write-provider"
 REGISTRY="crpi-uorshhk4a32pmmio.cn-hangzhou.personal.cr.aliyuncs.com"
+REMOTE_IMAGE="$REGISTRY/quanttide/$IMAGE_NAME:latest"
 
-echo "=== 1. 构建 Docker 镜像 ==="
+echo "=== 1. Build linux/amd64 Docker image ==="
 cd "$PROVIDER_DIR"
-docker build -t "$IMAGE_NAME:latest" .
+docker buildx inspect qtcloud-write-builder >/dev/null 2>&1 || \
+  docker buildx create --name qtcloud-write-builder --use
+docker buildx build \
+  --platform linux/amd64 \
+  --provenance=false \
+  --sbom=false \
+  -t "$IMAGE_NAME:latest" \
+  --load \
+  .
 
 echo ""
-echo "=== 2. 推送到阿里云容器镜像服务 ==="
-docker tag "$IMAGE_NAME:latest" "$REGISTRY/quanttide/$IMAGE_NAME:latest"
-docker push "$REGISTRY/quanttide/$IMAGE_NAME:latest"
+echo "=== 2. Push to Alibaba Cloud Container Registry ==="
+docker tag "$IMAGE_NAME:latest" "$REMOTE_IMAGE"
+docker push "$REMOTE_IMAGE"
 
 echo ""
-echo "=== 完成 ==="
-echo "镜像已推送，请登录阿里云函数计算控制台创建函数"
-echo "镜像地址: $REGISTRY/quanttide/$IMAGE_NAME:latest"
+echo "=== Done ==="
+echo "Image pushed: $REMOTE_IMAGE"

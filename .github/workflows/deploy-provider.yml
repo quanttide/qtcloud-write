@@ -5,6 +5,9 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/deploy-provider.yml'
+      - 'manifests/iac/**'
+      - 'scripts/deploy-provider.sh'
       - 'src/provider/**'
 
 jobs:
@@ -32,7 +35,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: src/provider
+          platforms: linux/amd64
           push: true
+          provenance: false
+          sbom: false
           tags: |
             ${{ vars.ACR_REGISTRY }}/quanttide/qtcloud-write-provider:latest
             ${{ vars.ACR_REGISTRY }}/quanttide/qtcloud-write-provider:${{ github.sha }}
