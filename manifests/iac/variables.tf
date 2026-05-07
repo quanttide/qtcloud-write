@@ -1,11 +1,24 @@
 variable "region" {
-  description = "阿里云区域"
+  description = "Alibaba Cloud region."
   type        = string
   default     = "cn-hangzhou"
 }
 
 variable "environment" {
-  description = "环境名称"
+  description = "Deployment environment name."
   type        = string
   default     = "prod"
+}
+
+variable "llm_api_key" {
+  description = "DeepSeek API key for the provider function. Set with TF_VAR_llm_api_key."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "llm_base_url" {
+  description = "OpenAI-compatible LLM base URL."
+  type        = string
+  default     = "https://api.deepseek.com"
 }
