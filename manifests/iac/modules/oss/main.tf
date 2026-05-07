@@ -10,19 +10,17 @@ variable "region" {
 
 resource "alicloud_oss_bucket" "this" {
   bucket = var.bucket_name
-  acl    = "public-read"
+}
 
-  lifecycle_rule {
-    name      = "default"
-    enabled   = "true"
-    precedence = 0
-  }
+resource "alicloud_oss_bucket_acl" "this" {
+  bucket = alicloud_oss_bucket.this.bucket
+  acl    = "public-read"
 }
 
 resource "alicloud_oss_bucket_cors" "this" {
   bucket = alicloud_oss_bucket.this.id
 
-  rule {
+  cors_rule {
     allowed_origins = ["*"]
     allowed_methods = ["GET", "HEAD"]
     allowed_headers = ["*"]

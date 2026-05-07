@@ -9,10 +9,10 @@ terraform {
   }
 
   backend "oss" {
-    bucket     = "qtcloud-write-terraform-state"
-    prefix     = "state"
-    region     = "cn-hangzhou"
-    encrypt    = true
+    bucket  = "qtcloud-write-terraform-state"
+    prefix  = "state"
+    region  = "cn-hangzhou"
+    encrypt = true
   }
 }
 
@@ -33,4 +33,6 @@ module "fc" {
   service_name  = "qtcloud-write"
   function_name = "provider"
   region        = var.region
+  llm_api_key   = var.llm_api_key
+  llm_base_url  = var.llm_base_url
 }
