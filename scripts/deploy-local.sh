@@ -50,7 +50,7 @@ echo ""
 # ── Studio ───────────────────────────────────────────────
 echo "--- 安装 studio ---"
 cd "$ROOT/src/studio"
-flutter pub get --quiet
+flutter pub get
 echo "  Flutter 依赖已安装"
 echo ""
 
