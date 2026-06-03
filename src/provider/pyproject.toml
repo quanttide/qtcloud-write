@@ -5,4 +5,4 @@ requires-python = ">=3.11"
 dependencies = ["fastapi", "uvicorn", "pydantic-settings", "quanttide-agent"]
 
 [project.optional-dependencies]
-dev = ["httpx", "pytest", "requests", "pact-python"]
+dev = ["httpx", "pytest", "requests", "pact-python", "pytest-httpx"]
