@@ -20,26 +20,13 @@ void main() {
       cubit.close();
     });
 
-    testWidgets('shows suggestions when analysis has rewrites', (tester) async {
+    testWidgets('shows summary when analysis exists', (tester) async {
       final cubit = WritingReviewCubit.test();
-      cubit.textChanged('他悲伤地看着她。\n她开心地笑了。\n他走了过去。');
-      cubit.runReview();
+      cubit.textChanged('test');
+      await cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));
-      await tester.pump();
-      expect(find.textContaining('改写建议'), findsOneWidget);
-      cubit.close();
-    });
-
-    testWidgets('tapping a suggestion button triggers jump', (tester) async {
-      final cubit = WritingReviewCubit.test();
-      cubit.textChanged('他悲伤地看着她。\n她开心地笑了。\n他走了过去。');
-      cubit.runReview();
-      await tester.pumpWidget(_buildApp(cubit));
-      await tester.pump();
-      final jumpButton = find.text('✎ 定位到此处');
-      if (jumpButton.evaluate().isNotEmpty) {
-        await tester.tap(jumpButton.first);
-      }
+      await tester.pumpAndSettle();
+      expect(find.textContaining('分析结果'), findsWidgets);
       cubit.close();
     });
   });

@@ -9,21 +9,21 @@ class RemoteAnalysisService implements AnalysisService {
   RemoteAnalysisService(this.baseUrl);
 
   @override
-  Future<DeepReview> submitReview({
-    required String title,
-    required List<String> paragraphs,
+  Future<ReviewResponse> submitReview({
+    required String text,
+    required List<Map<String, dynamic>> criteria,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/review'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'title': title,
-        'paragraphs': paragraphs,
+        'text': text,
+        'criteria': criteria,
       }),
     );
 
     if (response.statusCode == 200) {
-      return DeepReview.fromJson(jsonDecode(response.body));
+      return ReviewResponse.fromJson(jsonDecode(response.body));
     }
 
     String detail = '';

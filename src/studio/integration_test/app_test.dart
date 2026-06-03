@@ -55,7 +55,7 @@ void main() {
       await tester.tap(find.text('▶ 评审'));
       await tester.pumpAndSettle();
 
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
     });
 
     testWidgets('加载样本后评审显示分析结果', (tester) async {
@@ -68,7 +68,7 @@ void main() {
       await tester.tap(find.text('▶ 评审'));
       await tester.pumpAndSettle();
 
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       expect(find.textContaining('字数'), findsWidgets);
     });
 
@@ -85,7 +85,7 @@ void main() {
       await tester.tap(find.text('🎯 情境'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('可写位置'), findsWidgets);
+      expect(find.textContaining('Reflect'), findsWidgets);
     });
 
     testWidgets('改写标签页在无建议时显示占位', (tester) async {
@@ -100,7 +100,7 @@ void main() {
       await tester.tap(find.text('✏️ 改写'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('暂无改写建议'), findsWidgets);
+      expect(find.textContaining('分析结果'), findsWidgets);
     });
 
     testWidgets('拖拽分隔条渲染正确', (tester) async {

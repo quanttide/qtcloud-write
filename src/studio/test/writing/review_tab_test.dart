@@ -29,7 +29,7 @@ void main() {
       cubit.textChanged('test content');
       await cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       cubit.close();
     });
 

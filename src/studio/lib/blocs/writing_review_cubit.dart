@@ -6,7 +6,7 @@ enum ReviewPanelTab { review, reflect, rewrite }
 
 class WritingReviewState {
   final String text;
-  final DeepReview? deepAnalysis;
+  final ReviewResponse? reviewResponse;
   final ReviewPanelTab currentTab;
   final int round;
   final bool isLoading;
@@ -16,7 +16,7 @@ class WritingReviewState {
 
   const WritingReviewState({
     this.text = '',
-    this.deepAnalysis,
+    this.reviewResponse,
     this.currentTab = ReviewPanelTab.review,
     this.round = 1,
     this.isLoading = false,
@@ -27,7 +27,7 @@ class WritingReviewState {
 
   WritingReviewState copyWith({
     String? text,
-    DeepReview? deepAnalysis,
+    ReviewResponse? reviewResponse,
     ReviewPanelTab? currentTab,
     int? round,
     bool? isLoading,
@@ -39,7 +39,7 @@ class WritingReviewState {
   }) {
     return WritingReviewState(
       text: text ?? this.text,
-      deepAnalysis: deepAnalysis ?? this.deepAnalysis,
+      reviewResponse: reviewResponse ?? this.reviewResponse,
       currentTab: currentTab ?? this.currentTab,
       round: round ?? this.round,
       isLoading: isLoading ?? this.isLoading,
@@ -72,15 +72,14 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
     if (state.text.trim().isEmpty) return;
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
-      final paragraphs = state.text.split('\n').where((l) => l.trim().isNotEmpty).toList();
       final result = await _service.submitReview(
-        title: '未命名文稿',
-        paragraphs: paragraphs,
+        text: state.text,
+        criteria: [],
       );
       emit(state.copyWith(
-        deepAnalysis: result,
+        reviewResponse: result,
         isLoading: false,
-        isUsingProvider: result.isFromRemote,
+        isUsingProvider: true,
       ));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: '分析失败: $e'));
@@ -90,12 +89,11 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
   Future<void> loadSample() async {
     emit(state.copyWith(text: _sampleText, isLoading: true, clearError: true));
     try {
-      final paragraphs = _sampleText.split('\n').where((l) => l.trim().isNotEmpty).toList();
       final result = await _service.submitReview(
-        title: '咖啡厅重逢',
-        paragraphs: paragraphs,
+        text: _sampleText,
+        criteria: [],
       );
-      emit(state.copyWith(deepAnalysis: result, isLoading: false, isUsingProvider: result.isFromRemote));
+      emit(state.copyWith(reviewResponse: result, isLoading: false, isUsingProvider: true));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: '分析失败: $e'));
     }
@@ -158,7 +156,7 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
 
 class _TestAnalysisService implements AnalysisService {
   @override
-  Future<DeepReview> submitReview({required String title, required List<String> paragraphs}) async {
-    return DeepReview(articleTitle: title, summary: '测试分析结果', paragraphs: [], suggestions: [], isFromRemote: false);
+  Future<ReviewResponse> submitReview({required String text, required List<Map<String, dynamic>> criteria}) async {
+    return ReviewResponse(criteriaAnalysis: [], overallSummary: '测试分析结果');
   }
 }

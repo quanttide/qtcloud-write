@@ -30,7 +30,7 @@ void main() {
       cubit.textChanged('test content');
       await tester.pumpWidget(_buildApp(cubit));
       await tester.tap(find.text('▶ 评审'));
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       cubit.close();
     });
 

@@ -3,28 +3,16 @@ import logging
 import logging.handlers
 from pathlib import Path
 
-from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.models import (
-    TextIn, ReviewOut, Review3ROut, GapAnalysis, RewriteRequest, RewriteOut,
-    ParagraphReview, Comparison, Suggestion, StyleUsage,
-    StyleSample, ReviewOptions, Location,
+    Criterion, ReviewRequest, ReviewResponse, CriterionAnalysis, Deviation,
+    ReflectRequest, ReflectResponse, ReflectIssue,
+    RewriteRequest, RewriteResponse, RewriteChange,
 )
 from app.services.llm import call_llm
-from app.services.reflect import cmd_reflect as reflect_cmd
-from app.services.rewrite import cmd_rewrite as rewrite_cmd
-from app.services.review import review_article
 
-
-class ReviewRequest(BaseModel):
-    title: str
-    paragraphs: list[str]
-    style_samples: list[StyleSample] | None = None
-    options: ReviewOptions | None = None
-
-# 日志配置
 settings = get_settings()
 log_dir = Path(settings.data_dir)
 log_dir.mkdir(parents=True, exist_ok=True)
@@ -35,177 +23,207 @@ handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"
 logging.getLogger().addHandler(handler)
 logging.getLogger().setLevel(logging.INFO)
 
-app = FastAPI(title="写作云 Provider", version="0.1")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="写作云 Provider", version="0.2")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
-REVIEW_PROMPT = """请阅读下面的文章片段，从写作意图的角度分析它。
+def _format_criteria(criteria: list[Criterion]) -> str:
+    parts = []
+    for c in criteria:
+        if c.type == "positive_example":
+            parts.append(f"正面范例「{c.name or c.id}」：{c.content}")
+        elif c.type == "negative_example":
+            parts.append(f"反面范例「{c.name or c.id}」：{c.content}")
+        elif c.type == "constraint":
+            parts.append(f"约束「{c.name or c.id}」：{c.description or c.content}")
+    return "\n\n".join(parts)
 
-输出 JSON：
+
+REVIEW_PROMPT = """你是一个文本对比助手。用户提供一篇文本（TEXT）和若干准则（CRITERIA）。
+
+每个准则可能是正面范例（positive_example）、反面范例（negative_example）或约束（constraint）。
+
+对于每个准则：
+- positive_example：评估 TEXT 在多大程度上体现了该范例的风格/特征。给出 0-1 分数（1=完全一致），指出具体偏差位置和建议。
+- negative_example：评估 TEXT 在多大程度上避免了该范例的特征。分数越高越好（1=完全不相似）。指出哪里仍然像反面范例。
+- constraint：评估 TEXT 是否满足约束，若不满足指出位置和建议。
+
+输出 JSON，格式如下，不要额外文字：
 {{
-  "summary": "一句话总结这段文本在干什么（30字以内）"
+  "criteria_analysis": [
+    {{
+      "criterion_id": "c1",
+      "alignment_score": 0.35,
+      "deviations": [
+        {{
+          "location": "原文片段",
+          "explanation": "偏差解释",
+          "suggested_alignment": "建议的改写"
+        }}
+      ]
+    }}
+  ],
+  "overall_summary": "一句话总结"
 }}
 
-文章：
-{text}"""
+TEXT：
+{text}
 
-REVIEW_WITH_STYLE_PROMPT = """请阅读下面的文章片段，从写作意图的角度分析它，并与提供的风格样本进行对比。
+CRITERIA：
+{criteria}"""
 
-风格样本：
-{styles}
 
-输出 JSON：
+REFLECT_PROMPT = """你是一个写作诊断专家。用户提供一个文本片段和一个准则，请深入分析该文本与准则的差异。
+
+输出 JSON，格式如下，不要额外文字：
 {{
-  "summary": "一句话总结这段文本在干什么，包括与风格的对比结论（50字以内）"
+  "analysis": {{
+    "patterns_found": ["当前文本的模式"],
+    "patterns_expected": ["准则中期望的模式"],
+    "gap_description": "差异描述",
+    "sample_illustration": "准则中的示范"
+  }},
+  "specific_issues": [
+    {{
+      "location": "问题位置",
+      "issue": "问题描述",
+      "fix_suggestion": "修改建议"
+    }}
+  ]
 }}
 
-文章：
+准则：
+{name}（{type}）
+{content_desc}
+
+文本：
 {text}"""
 
 
-def _format_styles(style_samples: list[StyleSample]) -> str:
-    return "\n\n".join(
-        f"样本「{s.name}」：\n" + "\n".join(s.paragraphs)
-        for s in style_samples
-    )
+REWRITE_PROMPT = """你是一个文本改写助手。用户提供一篇文本、若干准则（含权重）和一个改写策略。
+
+请修改文本以更好地满足所有准则，保留原意。
+
+策略说明：
+- weighted_sum：按权重综合考虑所有准则，权重越高的准则优先满足
+- prioritize_first：优先满足第一个准则，在不违背原意的前提下尽量兼顾其他
+- avoid_negative：首要目标是避免与反面范例相似，其次才是接近正面范例
+
+输出 JSON，格式如下，不要额外文字：
+{{
+  "rewritten_text": "修改后的完整文本",
+  "alignment_scores": {{
+    "c1": 0.85,
+    "c2": 0.72
+  }},
+  "changes": [
+    {{
+      "criterion_id": "c1",
+      "original_snippet": "原文中被替换的部分",
+      "new_snippet": "替换后的文本"
+    }}
+  ]
+}}
+
+原文：
+{text}
+
+准则（含权重）：
+{criteria}
+
+策略：{strategy}
+{length_note}"""
 
 
-def cmd_review(text: str, style_samples: list[StyleSample] | None = None) -> tuple[str, StyleUsage | None]:
-    if style_samples:
-        styles_text = _format_styles(style_samples)
-        prompt = REVIEW_WITH_STYLE_PROMPT.format(text=text, styles=styles_text)
-        usage = StyleUsage(
-            samples_used=[s.name for s in style_samples],
-            confidence=0.8,
-        )
-    else:
-        prompt = REVIEW_PROMPT.format(text=text)
-        usage = None
+# ── 辅助 ────────────────────────────────────────────────
 
-    raw = call_llm(prompt, system="你是一个写作意图分析专家。", temperature=0.3)
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        data = {}
-    return data.get("summary", ""), usage
+def _criteria_for_prompt(criteria: list[Criterion]) -> tuple[str, str]:
+    """返回 (review格式的文本, rewrite格式的文本)"""
+    lines = []
+    for c in criteria:
+        if c.type == "positive_example":
+            lines.append(f"  - {c.id} ({c.type}, weight={c.weight}): {c.content}")
+        elif c.type == "negative_example":
+            lines.append(f"  - {c.id} ({c.type}, weight={c.weight}): 避免类似 {c.content}")
+        elif c.type == "constraint":
+            lines.append(f"  - {c.id} ({c.type}, weight={c.weight}): {c.description or c.content}")
+    return "\n".join(lines)
 
 
-# ── 请求模型（不在 models.py 中，因为是与端点绑定的输入格式）──
+# ── 端点 ────────────────────────────────────────────────
 
-class ReviewRequest(BaseModel):
-    title: str
-    paragraphs: list[str]
-    style_samples: list[StyleSample] | None = None
-    options: ReviewOptions | None = None
-
-
-@app.post("/review", response_model=ReviewOut, response_model_exclude_none=True)
+@app.post("/review", response_model=ReviewResponse)
 def review(body: ReviewRequest):
     try:
-        opts = body.options or ReviewOptions()
-        summary, style_usage = cmd_review(
-            "\n".join(body.paragraphs),
-            body.style_samples or None,
+        prompt = REVIEW_PROMPT.format(
+            text=body.text,
+            criteria=_format_criteria(body.criteria),
         )
+        raw = call_llm(prompt, system="你是一个文本对比分析助手。", temperature=0.3)
+        data = json.loads(raw)
 
-        para_reviews, raw_suggestions = review_article(
-            body.paragraphs,
-            body.style_samples,
-            opts.max_paragraphs_to_compare,
-        )
-        suggestions = [Suggestion(**s) for s in raw_suggestions] if opts.include_suggestions else []
+        analyses = []
+        for a in data.get("criteria_analysis", []):
+            deviations = [Deviation(**d) for d in a.get("deviations", [])]
+            analyses.append(CriterionAnalysis(
+                criterion_id=a.get("criterion_id", ""),
+                alignment_score=a.get("alignment_score", 0.0),
+                deviations=deviations,
+            ))
 
-        return ReviewOut(
-            article_title=body.title,
-            summary=summary,
-            paragraphs=para_reviews,
-            suggestions=suggestions,
-            style_usage=style_usage,
+        return ReviewResponse(
+            criteria_analysis=analyses,
+            overall_summary=data.get("overall_summary", ""),
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@app.post("/reflect", response_model=list[GapAnalysis])
-def reflect(body: TextIn):
+@app.post("/reflect", response_model=ReflectResponse)
+def reflect(body: ReflectRequest):
     try:
-        review_3r = cmd_review_3r(body.text)
-        gaps = reflect_cmd(body.text, review_3r.genre, review_3r.intent, review_3r.stage)
-        return [
-            GapAnalysis(
-                gap_id=g.get("gap_id", f"gap_{i:03d}"),
-                gap_type=g.get("gap_type", "unknown"),
-                location=Location(
-                    start_char=g.get("location", {}).get("start_char", 0),
-                    end_char=g.get("location", {}).get("end_char", 0),
-                    text_snippet=g.get("location", {}).get("text_snippet", ""),
-                ),
-                detail=g.get("detail", ""),
-                multi_dimensions=g.get("multi_dimensions", {}),
-                craft=g.get("craft", "无意识忽略"),
-                root_cause=g.get("root_cause", ""),
-                suggested_fix=g.get("suggested_fix", ""),
-            )
-            for i, g in enumerate(gaps)
-        ]
+        c = body.criterion
+        content_desc = c.content if c.type != "constraint" else c.description
+        prompt = REFLECT_PROMPT.format(
+            name=c.name or c.id,
+            type=c.type,
+            content_desc=content_desc,
+            text=body.text,
+        )
+        raw = call_llm(prompt, system="你是一个写作诊断专家。", temperature=0.3)
+        data = json.loads(raw)
+
+        issues = [ReflectIssue(**i) for i in data.get("specific_issues", [])]
+        return ReflectResponse(
+            criterion_id=c.id,
+            analysis=data.get("analysis", {}),
+            specific_issues=issues,
+        )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@app.post("/rewrite", response_model=RewriteOut)
+@app.post("/rewrite", response_model=RewriteResponse)
 def rewrite(body: RewriteRequest):
     try:
-        review_3r = cmd_review_3r(body.text)
-        all_gaps = reflect_cmd(body.text, review_3r.genre, review_3r.intent, review_3r.stage)
+        criteria_text = _criteria_for_prompt(body.criteria)
+        length_note = "尽量保持原文长度不变。" if body.preserve_original_length else ""
 
-        # 如果 gaps_to_fix 未指定，默认修复所有非有意留白
-        if body.gaps_to_fix is None:
-            body.gaps_to_fix = [g.get("gap_id", f"gap_{i:03d}") for i, g in enumerate(all_gaps) if g.get("craft") != "有意识留白"]
-
-        new_text, changes, unfixed = rewrite_cmd(
-            body.text,
-            review_3r.genre,
-            review_3r.intent,
-            all_gaps,
-            body.gaps_to_fix,
+        prompt = REWRITE_PROMPT.format(
+            text=body.text,
+            criteria=criteria_text,
+            strategy=body.strategy,
+            length_note=length_note,
         )
-        return RewriteOut(text=new_text, length=len(new_text), changes=changes, unfixed_gaps=unfixed)
+        raw = call_llm(prompt, system="你是一个文本改写助手。", temperature=0.4)
+        data = json.loads(raw)
+
+        changes = [RewriteChange(**c) for c in data.get("changes", [])]
+        return RewriteResponse(
+            original_text=body.text,
+            rewritten_text=data.get("rewritten_text", body.text),
+            alignment_scores=data.get("alignment_scores", {}),
+            changes=changes,
+        )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
-
-
-REVIEW_3R_PROMPT = """请阅读下面的文章片段，从写作意图的角度分析它。
-
-不需要找问题。只需要理解这段文本在做什么。
-
-输出 JSON：
-{{
-  "genre": "场景体裁分类（如：重逢场景/日常对话/情感释放/事件驱动），10字以内",
-  "intent": "作者的创作意图（如：营造暧昧氛围/推进人物关系/展示角色性格），20字以内",
-  "stage": "根据文本呈现出来的完成度，判断这是初稿还是成稿，以及一句话依据",
-  "summary": "一句话总结这段文本在干什么（30字以内）"
-}}
-
-文章：
-{text}"""
-
-
-def cmd_review_3r(text: str) -> Review3ROut:
-    prompt = REVIEW_3R_PROMPT.format(text=text)
-    raw = call_llm(prompt, system="你是一个写作意图分析专家。", temperature=0.3)
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        data = {}
-    return Review3ROut(
-        genre=data.get("genre", "未知"),
-        intent=data.get("intent", "未知"),
-        stage=data.get("stage", "未知"),
-        summary=data.get("summary", ""),
-    )

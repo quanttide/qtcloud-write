@@ -11,94 +11,69 @@ class ReviewTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = cubit.state;
-    final deep = state.deepAnalysis;
+    final resp = state.reviewResponse;
 
     if (state.isLoading) {
       return const Center(child: Text('分析中...', style: TextStyle(fontSize: 12, color: WritingColors.textDim)));
     }
-    if (deep == null) {
+    if (resp == null) {
       return const Center(child: Text('等待评审...', style: TextStyle(fontSize: 12, color: WritingColors.textDim)));
     }
 
-    return _ProviderReviewContent(deep: deep);
-  }
-}
-
-class _ProviderReviewContent extends StatelessWidget {
-  final DeepReview deep;
-  const _ProviderReviewContent({required this.deep});
-
-  @override
-  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(10),
       children: [
-        const Text('AI 分析结果', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.textDim, letterSpacing: 0.8)),
-        const SizedBox(height: 6),
-        Text(deep.summary, style: const TextStyle(fontSize: 12, color: WritingColors.text, height: 1.5)),
-        if (deep.paragraphs.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          const Text('段落结构', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.textDim, letterSpacing: 0.8)),
+        if (resp.overallSummary.isNotEmpty) ...[
+          const Text('评审摘要', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.textDim, letterSpacing: 0.8)),
           const SizedBox(height: 4),
-          ...deep.paragraphs.map((p) => _ParaCard(p: p)),
+          Text(resp.overallSummary, style: const TextStyle(fontSize: 12, color: WritingColors.text, height: 1.5)),
+          const SizedBox(height: 12),
         ],
-        if (deep.suggestions.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          const Text('改进建议', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.textDim, letterSpacing: 0.8)),
+        if (resp.criteriaAnalysis.isNotEmpty) ...[
+          const Text('准则分析', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.textDim, letterSpacing: 0.8)),
           const SizedBox(height: 4),
-          ...deep.suggestions.map((s) => _SugCard(s: s)),
+          ...resp.criteriaAnalysis.map((a) => _CriterionCard(analysis: a)),
         ],
       ],
     );
   }
 }
 
-class _ParaCard extends StatelessWidget {
-  final DeepParagraphReview p;
-  const _ParaCard({required this.p});
-
-  Color _color(String tag) => switch (tag) { '起' => WritingColors.accent, '承' => WritingColors.accent2, '转' => WritingColors.accent3, '合' => WritingColors.red, _ => WritingColors.textDim };
+class _CriterionCard extends StatelessWidget {
+  final CriterionAnalysis analysis;
+  const _CriterionCard({required this.analysis});
 
   @override
   Widget build(BuildContext context) {
-    final c = _color(p.tag);
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: WritingColors.surface2, borderRadius: BorderRadius.circular(6), border: Border(left: BorderSide(color: c, width: 3))),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: WritingColors.surface2, borderRadius: BorderRadius.circular(8), border: Border(left: BorderSide(color: analysis.alignmentScore > 0.6 ? WritingColors.accent2 : WritingColors.accent3, width: 3))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1), decoration: BoxDecoration(color: c.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(3)),
-            child: Text(p.tag, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: c))),
-          const SizedBox(width: 6),
-          Expanded(child: Text(p.original.length > 60 ? '${p.original.substring(0, 60)}…' : p.original, style: const TextStyle(fontSize: 11, color: WritingColors.textDim), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Text('准则 ${analysis.criterionId}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.text)),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: analysis.alignmentScore > 0.6 ? WritingColors.accent2.withValues(alpha: 0.2) : WritingColors.accent3.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text('${(analysis.alignmentScore * 100).round()}%', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: analysis.alignmentScore > 0.6 ? WritingColors.accent2 : WritingColors.accent3)),
+          ),
         ]),
-        const SizedBox(height: 4),
-        Text(p.analysis, style: const TextStyle(fontSize: 11, color: WritingColors.text, height: 1.5)),
+        if (analysis.deviations.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          ...analysis.deviations.map((d) => Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(d.explanation, style: const TextStyle(fontSize: 11, color: WritingColors.text, height: 1.4)),
+              if (d.suggestedAlignment.isNotEmpty)
+                Text('建议: ${d.suggestedAlignment}', style: const TextStyle(fontSize: 10, color: WritingColors.accent, height: 1.4)),
+            ]),
+          )),
+        ],
       ]),
     );
   }
 }
-
-class _SugCard extends StatelessWidget {
-  final DeepSuggestion s;
-  const _SugCard({required this.s});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(color: WritingColors.surface2, borderRadius: BorderRadius.circular(4)),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1), decoration: BoxDecoration(color: WritingColors.accent.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(3)),
-          child: Text('P${s.priority}', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: WritingColors.accent))),
-        const SizedBox(width: 6),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(s.action, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.text)),
-          Text(s.detail, style: const TextStyle(fontSize: 11, color: WritingColors.textDim)),
-        ])),
-      ]),
-    );
-  }
-}
-

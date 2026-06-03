@@ -91,7 +91,7 @@ class _PhaseBar extends StatelessWidget {
             style: TextStyle(fontSize: 11, color: WritingColors.textDim),
           ),
           Text(
-            state.deepAnalysis != null ? '✓' : '—',
+            state.reviewResponse != null ? '✓' : '—',
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,

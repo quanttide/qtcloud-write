@@ -6,7 +6,7 @@ void main() {
     test('initial state is correct', () {
       final cubit = WritingReviewCubit.test();
       expect(cubit.state.text, isEmpty);
-      expect(cubit.state.deepAnalysis, isNull);
+      expect(cubit.state.reviewResponse, isNull);
       expect(cubit.state.currentTab, ReviewPanelTab.review);
       expect(cubit.state.round, 1);
       expect(cubit.state.isLoading, isFalse);
@@ -25,18 +25,18 @@ void main() {
     test('textChanged preserves analysis', () async {
       final cubit = WritingReviewCubit.test();
       await cubit.loadSample();
-      expect(cubit.state.deepAnalysis, isNotNull);
-      final originalSummary = cubit.state.deepAnalysis!.summary;
+      expect(cubit.state.reviewResponse, isNotNull);
+      final originalSummary = cubit.state.reviewResponse!.overallSummary;
       cubit.textChanged('modified text');
-      expect(cubit.state.deepAnalysis, isNotNull);
-      expect(cubit.state.deepAnalysis!.summary, originalSummary);
+      expect(cubit.state.reviewResponse, isNotNull);
+      expect(cubit.state.reviewResponse!.overallSummary, originalSummary);
       cubit.close();
     });
 
     test('runReview with empty text does nothing', () async {
       final cubit = WritingReviewCubit.test();
       await cubit.runReview();
-      expect(cubit.state.deepAnalysis, isNull);
+      expect(cubit.state.reviewResponse, isNull);
       cubit.close();
     });
 
@@ -44,7 +44,7 @@ void main() {
       final cubit = WritingReviewCubit.test();
       cubit.textChanged('test content');
       await cubit.runReview();
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       expect(cubit.state.isLoading, isFalse);
       cubit.close();
     });
@@ -53,7 +53,7 @@ void main() {
       final cubit = WritingReviewCubit.test();
       await cubit.loadSample();
       expect(cubit.state.text, isNotEmpty);
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       cubit.close();
     });
 
@@ -102,10 +102,10 @@ void main() {
     test('loadSample can be called multiple times', () async {
       final cubit = WritingReviewCubit.test();
       await cubit.loadSample();
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       cubit.textChanged('modified');
       await cubit.loadSample();
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       cubit.close();
     });
   });

@@ -20,25 +20,13 @@ void main() {
       cubit.close();
     });
 
-    testWidgets('shows situations when analysis has gaps', (tester) async {
+    testWidgets('shows reflect placeholder after analysis', (tester) async {
       final cubit = WritingReviewCubit.test();
-      cubit.loadSample();
+      cubit.textChanged('test');
+      await cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));
       await tester.pump();
-      expect(find.textContaining('可写位置'), findsOneWidget);
-      cubit.close();
-    });
-
-    testWidgets('tapping a situation card button triggers jump', (tester) async {
-      final cubit = WritingReviewCubit.test();
-      cubit.textChanged('第二天，他推开门走了出去。');
-      cubit.runReview();
-      await tester.pumpWidget(_buildApp(cubit));
-      await tester.pump();
-      final writeButton = find.text('✎ 写在这里');
-      if (writeButton.evaluate().isNotEmpty) {
-        await tester.tap(writeButton.first);
-      }
+      expect(find.textContaining('Reflect'), findsOneWidget);
       cubit.close();
     });
   });

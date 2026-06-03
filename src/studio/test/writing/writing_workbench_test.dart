@@ -46,7 +46,7 @@ void main() {
       await tester.pumpWidget(_buildApp(cubit));
       await tester.tap(find.text('▶ 评审'));
       await tester.pump();
-      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.reviewResponse, isNotNull);
       cubit.close();
     });
 

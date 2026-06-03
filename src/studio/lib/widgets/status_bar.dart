@@ -30,7 +30,7 @@ class StatusBar extends StatelessWidget {
               color: WritingColors.text,
             ),
           ),
-          if (cubit.state.deepAnalysis != null) ...[
+          if (cubit.state.reviewResponse != null) ...[
             const SizedBox(width: 12),
             Text(
               cubit.state.isUsingProvider ? 'AI分析' : '本地分析',

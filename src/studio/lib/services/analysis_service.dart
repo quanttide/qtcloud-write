@@ -1,8 +1,8 @@
 import '../models/deep_analysis.dart';
 
 abstract class AnalysisService {
-  Future<DeepReview> submitReview({
-    required String title,
-    required List<String> paragraphs,
+  Future<ReviewResponse> submitReview({
+    required String text,
+    required List<Map<String, dynamic>> criteria,
   });
 }
