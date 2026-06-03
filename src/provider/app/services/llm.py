@@ -2,7 +2,7 @@ import json
 from quanttide_agent import LLM
 
 from app.config import get_settings
-from app.models import Article, Comparison
+from app.models import Comparison, StyleSample
 
 
 _client = None
@@ -57,15 +57,15 @@ def analyze_paragraph(paragraph: str, position: int, total: int, article_tag: st
     return _parse_analyze_response(response.content, paragraph)
 
 
-def compare_with_style(paragraph: str, tag: str, style_examples: list[Article]) -> Comparison | None:
-    if not style_examples:
+def compare_with_style(paragraph: str, tag: str, style_samples: list[StyleSample]) -> Comparison | None:
+    if not style_samples:
         return None
 
     settings = get_settings()
     if not settings.llm_api_key:
         return None
 
-    prompt = _build_compare_prompt(paragraph, tag, style_examples)
+    prompt = _build_compare_prompt(paragraph, tag, style_samples)
     response = _get_client().complete(
         [
             {"role": "system", "content": "你是一个专业的写作风格评审专家。请对比分析给定段落与风格范例的差异。"},
@@ -110,10 +110,10 @@ def _parse_analyze_response(response_content: str, paragraph: str) -> dict:
     }
 
 
-def _build_compare_prompt(paragraph: str, tag: str, style_examples: list[Article]) -> str:
+def _build_compare_prompt(paragraph: str, tag: str, style_samples: list[StyleSample]) -> str:
     style_text = "\n\n".join(
-        f"范例文章 {i + 1}：《a.title》\n" + "\n".join(a.paragraphs)
-        for i, a in enumerate(style_examples)
+        f"风格样本「{s.name}」：\n" + "\n".join(s.paragraphs)
+        for s in style_samples
     )
     return f"""请对比下列段落与风格范例，判断其写作风格是否一致。
 

@@ -76,8 +76,6 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
       final result = await _service.submitReview(
         title: '未命名文稿',
         paragraphs: paragraphs,
-        author: 'user',
-        tag: 'bad',
       );
       emit(state.copyWith(
         deepAnalysis: result,
@@ -96,8 +94,6 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
       final result = await _service.submitReview(
         title: '咖啡厅重逢',
         paragraphs: paragraphs,
-        author: 'demo',
-        tag: 'bad',
       );
       emit(state.copyWith(deepAnalysis: result, isLoading: false, isUsingProvider: result.isFromRemote));
     } catch (e) {
@@ -162,7 +158,7 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
 
 class _TestAnalysisService implements AnalysisService {
   @override
-  Future<DeepReview> submitReview({required String title, required List<String> paragraphs, required String author, required String tag}) async {
-    return DeepReview(articleTitle: title, author: author, tag: tag, summary: '测试分析结果', paragraphs: [], isStyleAvailable: false, suggestions: [], isFromRemote: false);
+  Future<DeepReview> submitReview({required String title, required List<String> paragraphs}) async {
+    return DeepReview(articleTitle: title, summary: '测试分析结果', paragraphs: [], suggestions: [], isFromRemote: false);
   }
 }

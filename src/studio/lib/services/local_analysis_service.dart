@@ -8,19 +8,14 @@ class LocalAnalysisService implements AnalysisService {
   Future<DeepReview> submitReview({
     required String title,
     required List<String> paragraphs,
-    required String author,
-    required String tag,
   }) async {
     final text = paragraphs.join('\n');
     final result = AnalysisEngine.analyze(text);
 
     return DeepReview(
       articleTitle: title,
-      author: author,
-      tag: tag,
-      summary: '本地分析完成 — 共发现 ${result.gaps.length} 处空隙，综合评分 ${result.avgScore.round()}',
+      summary: '本地分析完成',
       paragraphs: [],
-      isStyleAvailable: false,
       suggestions: _buildSuggestions(result),
       isFromRemote: false,
     );

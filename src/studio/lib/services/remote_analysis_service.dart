@@ -12,8 +12,6 @@ class RemoteAnalysisService implements AnalysisService {
   Future<DeepReview> submitReview({
     required String title,
     required List<String> paragraphs,
-    required String author,
-    required String tag,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/review'),
@@ -21,8 +19,6 @@ class RemoteAnalysisService implements AnalysisService {
       body: jsonEncode({
         'title': title,
         'paragraphs': paragraphs,
-        'author': author,
-        'tag': tag,
       }),
     );
 

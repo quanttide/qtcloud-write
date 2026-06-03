@@ -1,27 +1,36 @@
+import json
 import logging
 import logging.handlers
 from pathlib import Path
 
-import uuid
+from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.models import (
-    ArticleIn, TextIn, Article,
-    ReviewOut, Review3ROut, GapAnalysis, RewriteOut, CycleOut,
-    ParagraphReview, Suggestion,
+    TextIn, ReviewOut, Review3ROut, GapAnalysis, RewriteOut, CycleOut,
+    ParagraphReview, Comparison, Suggestion, StyleUsage,
+    StyleSample, ReviewOptions,
 )
-from app.store import style_store
-from app.services.review import review_article
+from app.services.llm import call_llm
 from app.services.reflect import cmd_reflect as reflect_cmd
 from app.services.rewrite import cmd_rewrite as rewrite_cmd
-from app.services.llm import call_llm
+from app.services.review import review_article
+
+
+class ReviewRequest(BaseModel):
+    title: str
+    paragraphs: list[str]
+    style_samples: list[StyleSample] | None = None
+    options: ReviewOptions | None = None
 
 # 日志配置
 settings = get_settings()
 log_dir = Path(settings.data_dir)
 log_dir.mkdir(parents=True, exist_ok=True)
-handler = logging.handlers.TimedRotatingFileHandler(str(log_dir / "provider.log"), when="midnight", backupCount=7, encoding="utf-8")
+handler = logging.handlers.TimedRotatingFileHandler(
+    str(log_dir / "provider.log"), when="midnight", backupCount=7, encoding="utf-8"
+)
 handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
 logging.getLogger().addHandler(handler)
 logging.getLogger().setLevel(logging.INFO)
@@ -36,70 +45,88 @@ app.add_middleware(
 )
 
 
-REVIEW_3R_PROMPT = """请阅读下面的文章片段，从写作意图的角度分析它。
-
-不需要找问题。只需要理解这段文本在做什么。
+REVIEW_PROMPT = """请阅读下面的文章片段，从写作意图的角度分析它。
 
 输出 JSON：
 {{
-  "genre": "场景体裁分类（如：重逢场景/日常对话/情感释放/事件驱动），10字以内",
-  "intent": "作者的创作意图（如：营造暧昧氛围/推进人物关系/展示角色性格），20字以内",
-  "stage": "根据文本呈现出来的完成度，判断这是初稿还是成稿，以及一句话依据",
   "summary": "一句话总结这段文本在干什么（30字以内）"
 }}
 
 文章：
 {text}"""
 
+REVIEW_WITH_STYLE_PROMPT = """请阅读下面的文章片段，从写作意图的角度分析它，并与提供的风格样本进行对比。
 
-def cmd_review_3r(text: str) -> Review3ROut:
-    prompt = REVIEW_3R_PROMPT.format(text=text)
+风格样本：
+{styles}
+
+输出 JSON：
+{{
+  "summary": "一句话总结这段文本在干什么，包括与风格的对比结论（50字以内）"
+}}
+
+文章：
+{text}"""
+
+
+def _format_styles(style_samples: list[StyleSample]) -> str:
+    return "\n\n".join(
+        f"样本「{s.name}」：\n" + "\n".join(s.paragraphs)
+        for s in style_samples
+    )
+
+
+def cmd_review(text: str, style_samples: list[StyleSample] | None = None) -> tuple[str, StyleUsage | None]:
+    if style_samples:
+        styles_text = _format_styles(style_samples)
+        prompt = REVIEW_WITH_STYLE_PROMPT.format(text=text, styles=styles_text)
+        usage = StyleUsage(
+            samples_used=[s.name for s in style_samples],
+            confidence=0.8,
+        )
+    else:
+        prompt = REVIEW_PROMPT.format(text=text)
+        usage = None
+
     raw = call_llm(prompt, system="你是一个写作意图分析专家。", temperature=0.3)
-    import json
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
         data = {}
-    return Review3ROut(
-        genre=data.get("genre", "未知"),
-        intent=data.get("intent", "未知"),
-        stage=data.get("stage", "未知"),
-        summary=data.get("summary", ""),
-    )
+    return data.get("summary", ""), usage
 
 
-@app.post("/review", response_model=ReviewOut)
-def review(article_in: ArticleIn):
+# ── 请求模型（不在 models.py 中，因为是与端点绑定的输入格式）──
+
+class ReviewRequest(BaseModel):
+    title: str
+    paragraphs: list[str]
+    style_samples: list[StyleSample] | None = None
+    options: ReviewOptions | None = None
+
+
+@app.post("/review", response_model=ReviewOut, response_model_exclude_none=True)
+def review(body: ReviewRequest):
     try:
-        art = Article(
-            id=str(uuid.uuid4()),
-            title=article_in.title,
-            paragraphs=article_in.paragraphs,
-            author=article_in.author,
-            tag=article_in.tag,
+        opts = body.options or ReviewOptions()
+        summary, style_usage = cmd_review(
+            "\n".join(body.paragraphs),
+            body.style_samples or None,
         )
-        if article_in.tag == "good":
-            style_store.add_good(art)
 
-        is_style = style_store.is_available
-        para_reviews, raw_suggestions = review_article(art, is_style, style_store.good_articles)
-        suggestions = [Suggestion(**s) for s in raw_suggestions]
-
-        if article_in.tag == "good":
-            summary = "好文章，叙事结构清晰。"
-        elif not is_style:
-            summary = "风格还在积累中，暂无法对比好/坏。"
-        else:
-            summary = "根本问题不是'写得不好'，而是用了另一套写作引擎——好的文章从个人困境出发推演，本文从外部热点出发分析。"
+        para_reviews, raw_suggestions = review_article(
+            body.paragraphs,
+            body.style_samples,
+            opts.max_paragraphs_to_compare,
+        )
+        suggestions = [Suggestion(**s) for s in raw_suggestions] if opts.include_suggestions else []
 
         return ReviewOut(
-            article_title=article_in.title,
-            author=article_in.author,
-            tag=article_in.tag,
+            article_title=body.title,
             summary=summary,
             paragraphs=para_reviews,
-            is_style_available=is_style,
             suggestions=suggestions,
+            style_usage=style_usage,
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -139,3 +166,34 @@ def cycle(body: TextIn):
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+REVIEW_3R_PROMPT = """请阅读下面的文章片段，从写作意图的角度分析它。
+
+不需要找问题。只需要理解这段文本在做什么。
+
+输出 JSON：
+{{
+  "genre": "场景体裁分类（如：重逢场景/日常对话/情感释放/事件驱动），10字以内",
+  "intent": "作者的创作意图（如：营造暧昧氛围/推进人物关系/展示角色性格），20字以内",
+  "stage": "根据文本呈现出来的完成度，判断这是初稿还是成稿，以及一句话依据",
+  "summary": "一句话总结这段文本在干什么（30字以内）"
+}}
+
+文章：
+{text}"""
+
+
+def cmd_review_3r(text: str) -> Review3ROut:
+    prompt = REVIEW_3R_PROMPT.format(text=text)
+    raw = call_llm(prompt, system="你是一个写作意图分析专家。", temperature=0.3)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = {}
+    return Review3ROut(
+        genre=data.get("genre", "未知"),
+        intent=data.get("intent", "未知"),
+        stage=data.get("stage", "未知"),
+        summary=data.get("summary", ""),
+    )

@@ -1,5 +1,11 @@
+"""Consumer-driven pact contract — simulates Flutter making HTTP calls to provider.
+
+Generates pacts/qtcloud_write_provider.json which the provider must satisfy.
+"""
+
 import requests
 from pact import Pact
+from pact.match import each_like, like, regex
 
 PACT_DIR = "pacts"
 
@@ -27,18 +33,18 @@ class TestReviewEndpoint:
             .with_header("Content-Type", "application/json")
             .with_body(
                 {
-                    "article_title": Like("测试文章"),
-                    "author": Like("test"),
-                    "tag": Term(r"good|bad|external", "bad"),
-                    "summary": Like("分析结果摘要"),
-                    "paragraphs": EachLike(
+                    "article_title": like("测试文章"),
+                    "author": like("test"),
+                    "tag": regex(regex=r"good|bad|external"),
+                    "summary": like("分析结果摘要"),
+                    "paragraphs": each_like(
                         {
-                            "original": Like("第一段"),
-                            "analysis": Like("开篇引入"),
-                            "tag": Term(r"起|承|转|合", "起"),
+                            "original": like("第一段"),
+                            "analysis": like("开篇引入"),
+                            "tag": regex(regex=r"起|承|转|合"),
                         }
                     ),
-                    "is_style_available": Term(r"true|false", "false"),
+                    "is_style_available": regex(regex=r"true|false"),
                     "suggestions": [],
                 }
             )
@@ -71,26 +77,22 @@ class TestReflectEndpoint:
             .given("provider is running with valid API key")
             .with_request("POST", "/reflect")
             .with_header("Content-Type", "application/json")
-            .with_body({"text": Like("他推开门走了出去。")})
+            .with_body({"text": like("他推开门走了出去。")})
             .will_respond_with(200)
             .with_header("Content-Type", "application/json")
             .with_body(
-                EachLike(
+                each_like(
                     {
-                        "gap_type": Term(
-                            r"time_jump|dialog_gap|action_gap|perspective_shift|transition",
-                            "action_gap",
+                        "gap_type": regex(
+                            regex=r"time_jump|dialog_gap|action_gap|perspective_shift|transition"
                         ),
-                        "location": Like("开门后"),
-                        "detail": Like("缺少过渡"),
-                        "structure": Like("叙事断裂"),
-                        "psychology": Like("人物反应缺失"),
-                        "reader": Like("期待落空"),
-                        "craft": Term(
-                            r"有意识留白|无意识忽略",
-                            "无意识忽略",
-                        ),
-                        "root_cause": Like("动作描写不完整"),
+                        "location": like("开门后"),
+                        "detail": like("缺少过渡"),
+                        "structure": like("叙事断裂"),
+                        "psychology": like("人物反应缺失"),
+                        "reader": like("期待落空"),
+                        "craft": regex(regex=r"有意识留白|无意识忽略"),
+                        "root_cause": like("动作描写不完整"),
                     }
                 )
             )

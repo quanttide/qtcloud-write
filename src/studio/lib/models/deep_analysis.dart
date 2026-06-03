@@ -1,10 +1,12 @@
 class DeepParagraphReview {
+  final int index;
   final String original;
   final String analysis;
   final String tag;
   final DeepComparison? comparison;
 
   DeepParagraphReview({
+    required this.index,
     required this.original,
     required this.analysis,
     required this.tag,
@@ -13,6 +15,7 @@ class DeepParagraphReview {
 
   factory DeepParagraphReview.fromJson(Map<String, dynamic> json) {
     return DeepParagraphReview(
+      index: json['index'] ?? 0,
       original: json['original'],
       analysis: json['analysis'],
       tag: json['tag'],
@@ -43,52 +46,69 @@ class DeepSuggestion {
   final int priority;
   final String action;
   final String detail;
+  final int? paragraphIndex;
 
-  DeepSuggestion({required this.priority, required this.action, required this.detail});
+  DeepSuggestion({
+    required this.priority,
+    required this.action,
+    required this.detail,
+    this.paragraphIndex,
+  });
 
   factory DeepSuggestion.fromJson(Map<String, dynamic> json) {
     return DeepSuggestion(
       priority: json['priority'],
       action: json['action'],
       detail: json['detail'],
+      paragraphIndex: json['paragraph_index'],
+    );
+  }
+}
+
+class DeepStyleUsage {
+  final List<String> samplesUsed;
+  final double confidence;
+
+  DeepStyleUsage({required this.samplesUsed, required this.confidence});
+
+  factory DeepStyleUsage.fromJson(Map<String, dynamic> json) {
+    return DeepStyleUsage(
+      samplesUsed: (json['samples_used'] as List).cast<String>(),
+      confidence: (json['confidence'] as num).toDouble(),
     );
   }
 }
 
 class DeepReview {
   final String articleTitle;
-  final String author;
-  final String tag;
   final String summary;
   final List<DeepParagraphReview> paragraphs;
-  final bool isStyleAvailable;
   final List<DeepSuggestion> suggestions;
+  final DeepStyleUsage? styleUsage;
   final bool isFromRemote;
 
   DeepReview({
     required this.articleTitle,
-    required this.author,
-    required this.tag,
     required this.summary,
     required this.paragraphs,
-    required this.isStyleAvailable,
     required this.suggestions,
+    this.styleUsage,
     this.isFromRemote = false,
   });
 
   factory DeepReview.fromJson(Map<String, dynamic> json) {
     return DeepReview(
       articleTitle: json['article_title'],
-      author: json['author'],
-      tag: json['tag'],
       summary: json['summary'],
       paragraphs: (json['paragraphs'] as List)
           .map((p) => DeepParagraphReview.fromJson(p))
           .toList(),
-      isStyleAvailable: json['is_style_available'],
       suggestions: (json['suggestions'] as List)
           .map((s) => DeepSuggestion.fromJson(s))
           .toList(),
+      styleUsage: json['style_usage'] != null
+          ? DeepStyleUsage.fromJson(json['style_usage'])
+          : null,
     );
   }
 }

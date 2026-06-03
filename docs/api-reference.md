@@ -12,7 +12,7 @@ Base URL: `http://localhost:9000`
 
 ### `POST /review` — 评审文章
 
-提交文章段落，返回每段的叙事结构分析和风格对比。
+纯无状态。提交文章段落和可选风格样本，返回每段的叙事结构分析和风格对比。后端不保存任何状态。
 
 **请求 `application/json`**
 
@@ -20,35 +20,48 @@ Base URL: `http://localhost:9000`
 |------|------|------|------|
 | `title` | string | 是 | 文章标题 |
 | `paragraphs` | array<string> | 是 | 段落列表，每段为一个字符串 |
-| `author` | string | 是 | 作者标识 |
-| `tag` | string | 是 | 文章类型：`good`（风格样本）/ `bad`（待评审）/ `external`（外部参考） |
+| `style_samples` | array\<StyleSample\> | 否 | 风格样本，用于与文章段落做对比。不传则不返回 comparison |
+| `options` | ReviewOptions | 否 | 可选配置 |
+
+**StyleSample**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `name` | string | 是 | 样本名称，会出现在响应 `style_usage` 中 |
+| `paragraphs` | array<string> | 是 | 样本段落 |
+
+**ReviewOptions**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `include_suggestions` | boolean | 否 | 是否生成改进建议，默认 true |
+| `max_paragraphs_to_compare` | int | 否 | 最多对比段落数，默认全部 |
 
 **响应 `200`**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `article_title` | string | 文章标题 |
-| `author` | string | 作者 |
-| `tag` | string | 文章类型 |
 | `summary` | string | 评审结论摘要 |
-| `paragraphs` | array\<ParagraphReview\> | 每段的分析结果 |
-| `is_style_available` | bool | 是否已积累风格样本 |
+| `paragraphs` | array\<ParagraphReview\> | 每段的分析结果，与输入段落顺序一致 |
 | `suggestions` | array\<Suggestion\> | 改进建议列表 |
+| `style_usage` | StyleUsage? | 风格样本使用情况。未传 `style_samples` 时不返回此字段 |
 
 **ParagraphReview**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
+| `index` | int | 段落序号（从 0 开始，对应输入 `paragraphs` 的索引） |
 | `original` | string | 段落原文 |
 | `analysis` | string | 叙事功能分析 |
 | `tag` | string | 叙事角色：`起` / `承` / `转` / `合` |
-| `comparison` | Comparison? | 与风格样本的对比结果（可为 null） |
+| `comparison` | Comparison? | 与风格样本的对比结果。未传 `style_samples` 时不返回此字段 |
 
 **Comparison**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `type` | string | `good` / `bad` / `pass` |
+| `type` | string | `good` / `bad` / `pass` / `no_style` |
 | `issue` | string? | 问题描述（type=bad 时） |
 | `demo` | string? | 示范写法（type=bad 时） |
 
@@ -59,36 +72,94 @@ Base URL: `http://localhost:9000`
 | `priority` | int | 优先级，1 最高 |
 | `action` | string | 操作名称 |
 | `detail` | string | 操作说明 |
+| `paragraph_index` | int? | 关联段落序号（可为 null，表示全局建议） |
 
-**示例**
+**StyleUsage**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `samples_used` | array\<string\> | 实际参与对比的样本名称列表 |
+| `confidence` | number | 对比置信度（0-1） |
+
+**示例 — 无风格样本**
 
 ```bash
 curl -X POST http://localhost:9000/review \
   -H "Content-Type: application/json" \
   -d '{
     "title": "咖啡厅重逢",
-    "paragraphs": ["他推开门走了出去。", "第二天，他又来了。"],
-    "author": "test",
-    "tag": "bad"
+    "paragraphs": ["他推开门走了出去。", "第二天，他又来了。"]
   }'
 ```
 
 ```json
 {
   "article_title": "咖啡厅重逢",
-  "author": "test",
-  "tag": "bad",
-  "summary": "风格还在积累中，暂无法对比好/坏。",
+  "summary": "两段叙事，第一段动作开篇，第二段时间跳跃。",
   "paragraphs": [
     {
+      "index": 0,
       "original": "他推开门走了出去。",
-      "analysis": "动作描写引入场景",
-      "tag": "起",
-      "comparison": null
+      "analysis": "以动作开篇，简洁有力。",
+      "tag": "起"
+    },
+    {
+      "index": 1,
+      "original": "第二天，他又来了。",
+      "analysis": "时间跳跃，缺少过渡。",
+      "tag": "承"
     }
   ],
-  "is_style_available": false,
   "suggestions": []
+}
+```
+
+**示例 — 带风格样本**
+
+```bash
+curl -X POST http://localhost:9000/review \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "咖啡厅重逢",
+    "paragraphs": ["他推开门走了出去。"],
+    "style_samples": [
+      {
+        "name": "细腻描写风格",
+        "paragraphs": ["他轻轻推开门，冷风裹着雨丝扑面而来。他深吸一口气，迈步走进雨里。"]
+      }
+    ]
+  }'
+```
+
+```json
+{
+  "article_title": "咖啡厅重逢",
+  "summary": "动作描写偏简略，可增加环境细节。",
+  "paragraphs": [
+    {
+      "index": 0,
+      "original": "他推开门走了出去。",
+      "analysis": "以动作开篇，简洁有力。",
+      "tag": "起",
+      "comparison": {
+        "type": "bad",
+        "issue": "动作描写缺少环境细节",
+        "demo": "他推开门，冷风裹着雨丝扑面而来。"
+      }
+    }
+  ],
+  "suggestions": [
+    {
+      "priority": 1,
+      "action": "补充环境描写",
+      "detail": "第一段可在动作后加入环境细节，增强沉浸感",
+      "paragraph_index": 0
+    }
+  ],
+  "style_usage": {
+    "samples_used": ["细腻描写风格"],
+    "confidence": 0.82
+  }
 }
 ```
 
@@ -125,21 +196,21 @@ curl -X POST http://localhost:9000/review \
 ```bash
 curl -X POST http://localhost:9000/reflect \
   -H "Content-Type: application/json" \
-  -d '{"text": "他推开门走了出去。"}'
+  -d '{"text": "他推开门走了出去。第二天，她又来了。"}'
 ```
 
 ```json
 [
   {
-    "gap_type": "action_gap",
-    "location": "开门后缺少衔接",
-    "line": 1,
-    "detail": "动作完成后直接结束段落",
-    "structure": "叙事断裂",
-    "psychology": "人物反应缺失",
-    "reader": "期待落空",
+    "gap_type": "time_jump",
+    "location": "从开门到第二天",
+    "line": 2,
+    "detail": "时间跳过没有过渡",
+    "structure": "节奏过快",
+    "psychology": "人物情绪中断",
+    "reader": "跟不上时间线",
     "craft": "无意识忽略",
-    "root_cause": "动作描写不完整"
+    "root_cause": "缺少时间过渡标记"
   }
 ]
 ```
@@ -261,23 +332,30 @@ curl -X POST http://localhost:9000/cycle \
 | DeepSeek 调用失败 | `LLM 调用失败: chat failed after retries` |
 | 输入过长 | 422 Unprocessable Entity（FastAPI 自动校验） |
 
+## 无状态原则
+
+`/review` 是纯无状态端点：
+
+- 后端不存储任何请求数据
+- 风格对比完全依赖请求中传入的 `style_samples`
+- 同一请求重复发送应返回一致结果（LLM 输出可能有微小波动）
+- 无需清理缓存或重置状态
+
 ## 数据模型映射
 
 | Provider（Pydantic） | Flutter（Dart） | 契约测试 |
 |----------------------|-----------------|---------|
-| `ReviewOut` | `DeepReview` | 两端 |
-| `ParagraphReview` | `DeepParagraphReview` | Flutter fromJson |
+| `ReviewOut` → 新增 `style_usage`, 移除 `is_style_available` | `DeepReview` | 两端 |
+| `ParagraphReview` → 新增 `index` | `DeepParagraphReview` | Flutter fromJson |
 | `Comparison` | `DeepComparison` | Flutter fromJson |
-| `Suggestion` | `DeepSuggestion` | Flutter fromJson |
-| `GapAnalysis` | 未映射 | Python 响应形状 |
-| `RewriteOut` | 未映射 | Python 响应形状 |
-| `CycleOut` | 未映射 | Python 响应形状 |
+| `Suggestion` → 新增 `paragraph_index` | `DeepSuggestion` | Flutter fromJson |
+| `StyleUsage` | 新增 | — |
 
 ## 契约测试
 
 | 侧 | 文件 | 验证内容 |
 |----|------|---------|
-| Flutter | `test/writing/provider_contract_test.dart` | `DeepReview.fromJson` 解析完整/含 comparison/空/null 四种 JSON |
+| Flutter | `test/writing/provider_contract_test.dart` | `DeepReview.fromJson` 解析各种合法 JSON |
 | Python | `tests/test_contract.py` | 响应包含所有必需字段，字段值域正确 |
 
 修改数据模型后需同步更新两侧测试，两端均通过后才能合并。
