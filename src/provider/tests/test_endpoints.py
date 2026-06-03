@@ -1,4 +1,4 @@
-"""Tests for review/reflect/rewrite endpoints."""
+"""Tests for review/analyze/inspire endpoints."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -34,43 +34,44 @@ class TestReview:
         assert "criteria_analysis" in resp.json()
 
 
-class TestReflect:
-    def test_reflect_with_criterion(self, client):
+class TestAnalyze:
+    def test_analyze_with_criterion(self, client):
         body = {
             "text": SAMPLE_TEXT,
             "criterion": SAMPLE_CRITERIA[0],
+            "deviation_description": "动作后缺少环境反馈",
         }
-        resp = client.post("/reflect", json=body)
+        resp = client.post("/analyze", json=body)
         assert resp.status_code == 200
         data = resp.json()
         assert data["criterion_id"] == "c1"
-        assert "analysis" in data
-        assert "specific_issues" in data
+        assert "original_pattern" in data
+        assert "fix_strategies" in data
 
 
-class TestRewrite:
-    def test_basic_rewrite(self, client):
+class TestInspire:
+    def test_basic_inspire(self, client):
         body = {
             "text": SAMPLE_TEXT,
             "criteria": SAMPLE_CRITERIA,
         }
-        resp = client.post("/rewrite", json=body)
+        resp = client.post("/inspire", json=body)
         assert resp.status_code == 200
         data = resp.json()
-        assert "rewritten_text" in data
-        assert "alignment_scores" in data
-        assert "changes" in data
+        assert "inspirations" in data
+        assert "usage_note" in data
 
-    def test_rewrite_with_strategy(self, client):
+    def test_inspire_with_options(self, client):
         body = {
             "text": SAMPLE_TEXT,
             "criteria": SAMPLE_CRITERIA,
-            "strategy": "prioritize_first",
-            "preserve_original_length": True,
+            "inspiration_count": 2,
+            "variety": "creative",
+            "focus_areas": ["过渡", "细节"],
         }
-        resp = client.post("/rewrite", json=body)
+        resp = client.post("/inspire", json=body)
         assert resp.status_code == 200
 
-    def test_rewrite_without_criteria(self, client):
-        resp = client.post("/rewrite", json={"text": SAMPLE_TEXT, "criteria": []})
+    def test_inspire_without_criteria(self, client):
+        resp = client.post("/inspire", json={"text": SAMPLE_TEXT, "criteria": []})
         assert resp.status_code == 200

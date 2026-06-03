@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.models import (
     Criterion, ReviewRequest, ReviewResponse, CriterionAnalysis, Deviation,
-    ReflectRequest, ReflectResponse, ReflectIssue,
-    RewriteRequest, RewriteResponse, RewriteChange,
+    AnalyzeRequest, AnalyzeResponse, FixStrategy,
+    InspireRequest, InspireResponse, Inspiration,
 )
 from app.services.llm import call_llm
 
@@ -73,24 +73,34 @@ CRITERIA：
 {criteria}"""
 
 
-REFLECT_PROMPT = """你是一个写作诊断专家。用户提供一个文本片段和一个准则，请深入分析该文本与准则的差异。
+ANALYZE_PROMPT = """你是一个写作诊断专家。用户提供一个文本片段和一个准则，请进行深度分析。
 
 输出 JSON，格式如下，不要额外文字：
 {{
-  "analysis": {{
-    "patterns_found": ["当前文本的模式"],
-    "patterns_expected": ["准则中期望的模式"],
-    "gap_description": "差异描述",
-    "sample_illustration": "准则中的示范"
+  "analysis_type": "pattern_contrast",
+  "original_pattern": {{
+    "description": "当前文本的模式描述",
+    "example_from_text": "文本中的具体例子"
   }},
-  "specific_issues": [
+  "expected_pattern": {{
+    "description": "准则期望的模式描述",
+    "example_from_criterion": "准则中的示范"
+  }},
+  "gap_analysis": {{
+    "root_cause": "根本原因分析",
+    "psychological_impact": "对读者的心理影响",
+    "structural_role": "在文中的结构作用"
+  }},
+  "fix_strategies": [
     {{
-      "location": "问题位置",
-      "issue": "问题描述",
-      "fix_suggestion": "修改建议"
+      "strategy": "策略名称",
+      "example": "具体的修改示例"
     }}
-  ]
+  ],
+  "suggested_next_steps": "下一步建议"
 }}
+
+偏差描述：{deviation_desc}
 
 准则：
 {name}（{type}）
@@ -100,27 +110,26 @@ REFLECT_PROMPT = """你是一个写作诊断专家。用户提供一个文本片
 {text}"""
 
 
-REWRITE_PROMPT = """你是一个文本改写助手。用户提供一篇文本、若干准则（含权重）和一个改写策略。
+INSPIRE_PROMPT = """你是一个写作创意助手。用户提供一篇原文和若干准则，请生成多个不同的启发式修改建议。
 
-请修改文本以更好地满足所有准则，保留原意。
+每个建议应是一个具体的改写片段，不是全文替换。用户会自行选择、组合或修改这些建议。
 
-策略说明：
-- weighted_sum：按权重综合考虑所有准则，权重越高的准则优先满足
-- prioritize_first：优先满足第一个准则，在不违背原意的前提下尽量兼顾其他
-- avoid_negative：首要目标是避免与反面范例相似，其次才是接近正面范例
+多样性要求：{variety_text}
+关注领域：{focus_text}
 
 输出 JSON，格式如下，不要额外文字：
 {{
-  "rewritten_text": "修改后的完整文本",
-  "alignment_scores": {{
-    "c1": 0.85,
-    "c2": 0.72
-  }},
-  "changes": [
+  "inspirations": [
     {{
-      "criterion_id": "c1",
-      "original_snippet": "原文中被替换的部分",
-      "new_snippet": "替换后的文本"
+      "id": "insp_001",
+      "title": "简短标题",
+      "description": "建议说明",
+      "suggested_snippet": "具体的改写片段",
+      "applies_to": "适用于原文的位置说明",
+      "changes_summary": "修改内容摘要",
+      "alignment_impact": {{
+        "c1": 0.85
+      }}
     }}
   ]
 }}
@@ -128,25 +137,21 @@ REWRITE_PROMPT = """你是一个文本改写助手。用户提供一篇文本、
 原文：
 {text}
 
-准则（含权重）：
-{criteria}
-
-策略：{strategy}
-{length_note}"""
+准则：
+{criteria}"""
 
 
 # ── 辅助 ────────────────────────────────────────────────
 
-def _criteria_for_prompt(criteria: list[Criterion]) -> tuple[str, str]:
-    """返回 (review格式的文本, rewrite格式的文本)"""
+def _criteria_text(criteria: list[Criterion]) -> str:
     lines = []
     for c in criteria:
         if c.type == "positive_example":
-            lines.append(f"  - {c.id} ({c.type}, weight={c.weight}): {c.content}")
+            lines.append(f"  - {c.id} (正面范例, weight={c.weight}): {c.content}")
         elif c.type == "negative_example":
-            lines.append(f"  - {c.id} ({c.type}, weight={c.weight}): 避免类似 {c.content}")
+            lines.append(f"  - {c.id} (反面范例, weight={c.weight}): 避免类似 {c.content}")
         elif c.type == "constraint":
-            lines.append(f"  - {c.id} ({c.type}, weight={c.weight}): {c.description or c.content}")
+            lines.append(f"  - {c.id} (约束, weight={c.weight}): {c.description or c.content}")
     return "\n".join(lines)
 
 
@@ -179,51 +184,55 @@ def review(body: ReviewRequest):
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@app.post("/reflect", response_model=ReflectResponse)
-def reflect(body: ReflectRequest):
+@app.post("/analyze", response_model=AnalyzeResponse)
+def analyze(body: AnalyzeRequest):
     try:
         c = body.criterion
         content_desc = c.content if c.type != "constraint" else c.description
-        prompt = REFLECT_PROMPT.format(
+        prompt = ANALYZE_PROMPT.format(
             name=c.name or c.id,
             type=c.type,
             content_desc=content_desc,
+            deviation_desc=body.deviation_description or "未提供",
             text=body.text,
         )
         raw = call_llm(prompt, system="你是一个写作诊断专家。", temperature=0.3)
         data = json.loads(raw)
 
-        issues = [ReflectIssue(**i) for i in data.get("specific_issues", [])]
-        return ReflectResponse(
+        return AnalyzeResponse(
             criterion_id=c.id,
-            analysis=data.get("analysis", {}),
-            specific_issues=issues,
+            analysis_type=data.get("analysis_type", "pattern_contrast"),
+            original_pattern=data.get("original_pattern", {}),
+            expected_pattern=data.get("expected_pattern", {}),
+            gap_analysis=data.get("gap_analysis", {}),
+            fix_strategies=[FixStrategy(**s) for s in data.get("fix_strategies", [])],
+            suggested_next_steps=data.get("suggested_next_steps", ""),
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
-@app.post("/rewrite", response_model=RewriteResponse)
-def rewrite(body: RewriteRequest):
+@app.post("/inspire", response_model=InspireResponse)
+def inspire(body: InspireRequest):
     try:
-        criteria_text = _criteria_for_prompt(body.criteria)
-        length_note = "尽量保持原文长度不变。" if body.preserve_original_length else ""
+        variety_map = {"conservative": "贴近原文，小幅调整", "balanced": "平衡创新与保留", "creative": "大胆改写，探索多种可能性"}
+        variety_text = variety_map.get(body.variety, "平衡创新与保留")
+        focus_text = "、".join(body.focus_areas) if body.focus_areas else "无特定限制"
 
-        prompt = REWRITE_PROMPT.format(
+        prompt = INSPIRE_PROMPT.format(
             text=body.text,
-            criteria=criteria_text,
-            strategy=body.strategy,
-            length_note=length_note,
+            criteria=_criteria_text(body.criteria),
+            variety_text=variety_text,
+            focus_text=focus_text,
         )
-        raw = call_llm(prompt, system="你是一个文本改写助手。", temperature=0.4)
+        raw = call_llm(prompt, system="你是一个写作创意助手。", temperature=body.temperature)
         data = json.loads(raw)
 
-        changes = [RewriteChange(**c) for c in data.get("changes", [])]
-        return RewriteResponse(
+        inspirations = [Inspiration(**i) for i in data.get("inspirations", [])]
+        return InspireResponse(
             original_text=body.text,
-            rewritten_text=data.get("rewritten_text", body.text),
-            alignment_scores=data.get("alignment_scores", {}),
-            changes=changes,
+            inspirations=inspirations,
+            usage_note="这些是启发建议，你可以直接使用、组合或修改其中元素。最终文本请自行整合。",
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))

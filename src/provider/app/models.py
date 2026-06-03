@@ -38,42 +38,56 @@ class ReviewResponse(BaseModel):
     overall_summary: str = ""
 
 
-# ── Reflect ────────────────────────────────────────────
+# ── Analyze ────────────────────────────────────────────
 
-class ReflectRequest(BaseModel):
+class AnalyzeRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
     criterion: Criterion
+    deviation_description: str = ""
+    focus: str = "root_cause"  # "root_cause" | "pattern_contrast" | "fix_suggestions"
 
 
-class ReflectIssue(BaseModel):
-    location: str = ""
-    issue: str = ""
-    fix_suggestion: str = ""
+class FixStrategy(BaseModel):
+    strategy: str = ""
+    example: str = ""
 
 
-class ReflectResponse(BaseModel):
+class AnalyzeResponse(BaseModel):
     criterion_id: str = ""
-    analysis: dict = Field(default_factory=dict)
-    specific_issues: list[ReflectIssue] = Field(default_factory=list)
+    analysis_type: str = ""
+    original_pattern: dict = Field(default_factory=dict)
+    expected_pattern: dict = Field(default_factory=dict)
+    gap_analysis: dict = Field(default_factory=dict)
+    fix_strategies: list[FixStrategy] = Field(default_factory=list)
+    suggested_next_steps: str = ""
 
 
-# ── Rewrite ────────────────────────────────────────────
+# ── Inspire ────────────────────────────────────────────
 
-class RewriteRequest(BaseModel):
+class InspirationImpact(BaseModel):
+    alignment_impact: dict[str, float] = Field(default_factory=dict)
+
+
+class Inspiration(BaseModel):
+    id: str = ""
+    title: str = ""
+    description: str = ""
+    suggested_snippet: str = ""
+    applies_to: str = ""
+    changes_summary: str = ""
+    alignment_impact: dict[str, float] = Field(default_factory=dict)
+
+
+class InspireRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
     criteria: list[Criterion] = Field(default_factory=list)
-    strategy: str = "weighted_sum"  # "weighted_sum" | "prioritize_first" | "avoid_negative"
-    preserve_original_length: bool = False
+    inspiration_count: int = 3
+    variety: str = "balanced"  # "conservative" | "balanced" | "creative"
+    focus_areas: list[str] = Field(default_factory=list)
+    temperature: float = 0.8
 
 
-class RewriteChange(BaseModel):
-    criterion_id: str = ""
-    original_snippet: str = ""
-    new_snippet: str = ""
-
-
-class RewriteResponse(BaseModel):
+class InspireResponse(BaseModel):
     original_text: str = ""
-    rewritten_text: str = ""
-    alignment_scores: dict[str, float] = Field(default_factory=dict)
-    changes: list[RewriteChange] = Field(default_factory=list)
+    inspirations: list[Inspiration] = Field(default_factory=list)
+    usage_note: str = ""

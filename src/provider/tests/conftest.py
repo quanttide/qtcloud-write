@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 REVIEW_RESP = '{"criteria_analysis":[{"criterion_id":"c1","alignment_score":0.35,"deviations":[{"location":"他推开门走了出去。","explanation":"缺少环境反馈","suggested_alignment":"他推开门，冷风扑面。"}]}],"overall_summary":"文本偏离正面范例。"}'
-REFLECT_RESP = '{"analysis":{"patterns_found":["动作-结束"],"patterns_expected":["动作-环境-反应"],"gap_description":"缺少环境反馈","sample_illustration":"范例文本"},"specific_issues":[{"location":"他推开门走了出去。","issue":"动作后直接结束","fix_suggestion":"添加环境描写"}]}'
-REWRITE_RESP = '{"rewritten_text":"他推开门，冷风扑面。","alignment_scores":{"c1":0.85},"changes":[{"criterion_id":"c1","original_snippet":"他推开门走了出去。","new_snippet":"他推开门，冷风扑面。"}]}'
+ANALYZE_RESP = '{"criterion_id":"c1","analysis_type":"pattern_contrast","original_pattern":{"description":"动作-结束","example_from_text":"他推开门走了出去。"},"expected_pattern":{"description":"动作-环境-反应","example_from_criterion":"范例文本"},"gap_analysis":{"root_cause":"缺少感官细节","psychological_impact":"读者无法感知环境","structural_role":"场景入口缺乏锚点"},"fix_strategies":[{"strategy":"添加环境刺激","example":"冷风如刀割在脸上。"}],"suggested_next_steps":"尝试以上策略。"}'
+INSPIRE_RESP = '{"inspirations":[{"id":"insp_001","title":"增加环境反馈","description":"加入冷风描写","suggested_snippet":"他推开门，冷风扑面。","applies_to":"第一句","changes_summary":"增加了环境细节","alignment_impact":{"c1":0.85}}],"usage_note":"这些是启发建议。"}'
 
 
 @pytest.fixture(autouse=True)
@@ -29,8 +29,8 @@ def mock_llm():
     m = p.start()
     m.side_effect = (
         lambda prompt, **kw: REVIEW_RESP if "文本对比助手" in prompt
-        else REFLECT_RESP if "写作诊断专家" in prompt
-        else REWRITE_RESP
+        else ANALYZE_RESP if "写作诊断专家" in prompt
+        else INSPIRE_RESP
     )
 
     yield
