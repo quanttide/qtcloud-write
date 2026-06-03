@@ -26,6 +26,7 @@ class StyleExcerpt(BaseModel):
 
 
 class Style(BaseModel):
+    name: str = ""
     title: str = ""
     description: str = ""
     dimensions: list[Dimension] = Field(default_factory=list)
