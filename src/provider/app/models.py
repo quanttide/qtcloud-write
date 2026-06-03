@@ -1,12 +1,18 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 
+MAX_INPUT_LENGTH = 8000
+
 
 class ArticleIn(BaseModel):
     title: str
     paragraphs: list[str]
     author: str
     tag: str  # "good" | "bad" | "external"
+
+
+class TextIn(BaseModel):
+    text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
 
 
 class Comparison(BaseModel):
@@ -36,6 +42,35 @@ class ReviewOut(BaseModel):
     paragraphs: list[ParagraphReview]
     is_style_available: bool
     suggestions: list[Suggestion] = Field(default_factory=list)
+
+
+class Review3ROut(BaseModel):
+    genre: str
+    intent: str
+    stage: str
+    summary: str
+
+
+class GapAnalysis(BaseModel):
+    gap_type: str
+    location: str
+    detail: str
+    structure: str
+    psychology: str
+    reader: str
+    craft: str
+    root_cause: str
+
+
+class RewriteOut(BaseModel):
+    text: str
+    length: int
+
+
+class CycleOut(BaseModel):
+    review: Review3ROut
+    reflect: list[GapAnalysis]
+    rewrite: RewriteOut
 
 
 class Article(BaseModel):

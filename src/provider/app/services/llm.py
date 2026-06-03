@@ -20,6 +20,19 @@ def _get_client() -> LLM:
     return _client
 
 
+def call_llm(prompt: str, system: str = "", temperature: float = 0.3) -> str:
+    """Simple LLM call — for 3R commands (reflect/rewrite)."""
+    settings = get_settings()
+    if not settings.llm_api_key:
+        raise ValueError("llm_api_key 未配置")
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    response = _get_client().complete(messages, temperature=temperature)
+    return response.content
+
+
 def analyze_paragraph(paragraph: str, position: int, total: int, article_tag: str) -> dict:
     settings = get_settings()
     if not settings.llm_api_key:
