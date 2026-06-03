@@ -12,7 +12,7 @@ class Dimension(BaseModel):
     clues: list[str] = Field(default_factory=list)
 
 
-class StyleExample(BaseModel):
+class StyleExcerpt(BaseModel):
     paragraph: str = ""
     dimension: str = ""
     note: str = ""
@@ -22,7 +22,7 @@ class StyleSample(BaseModel):
     title: str
     description: str = ""
     dimensions: list[Dimension] = Field(default_factory=list)
-    examples: list[StyleExample] = Field(default_factory=list)
+    excerpts: list[StyleExcerpt] = Field(default_factory=list)
 
 
 # ── Review ─────────────────────────────────────────────

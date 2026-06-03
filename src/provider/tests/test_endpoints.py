@@ -17,7 +17,7 @@ STYLE = {
         {"title": "情感表达", "description": "半直球路线", "confidence": 0.85, "clues": ["心尖像是被羽毛轻轻挠了一下"]},
         {"title": "语言风格", "description": "句式活泼", "confidence": 0.85, "clues": ["好啦"]},
     ],
-    "examples": [
+    "excerpts": [
         {"paragraph": "让我请你吃顿饭吧？", "dimension": "情感表达", "note": "欲说还休"},
     ],
 }

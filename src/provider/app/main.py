@@ -40,9 +40,9 @@ def _dimensions_text(style: StyleSample) -> str:
     return "\n".join(lines)
 
 
-def _examples_text(style: StyleSample) -> str:
+def _excerpts_text(style: StyleSample) -> str:
     lines = []
-    for ex in style.examples:
+    for ex in style.excerpts:
         lines.append(f"[{ex.dimension}] {ex.paragraph}")
         if ex.note:
             lines.append(f"  注: {ex.note}")
@@ -77,7 +77,7 @@ REVIEW_PROMPT = """你是一个风格分析助手。用户提供一篇文本和�
 {dimensions}
 
 风格范例：
-{examples}
+{excerpts}
 
 待评估文本：
 {text}"""
@@ -109,7 +109,7 @@ ANALYZE_PROMPT = """你是一个写作诊断专家。用户提供文本、风格
 维度描述：{dim_desc}
 
 风格范例：
-{examples}
+{excerpts}
 
 文本：
 {text}"""
@@ -142,7 +142,7 @@ INSPIRE_PROMPT = """你是一个写作创意助手。用户提供原文和一个
 {style_desc}
 
 风格范例：
-{examples}
+{excerpts}
 
 原文：
 {text}"""
@@ -155,7 +155,7 @@ def review(body: ReviewRequest):
             style_title=body.style.title,
             style_desc=body.style.description or "",
             dimensions=_dimensions_text(body.style),
-            examples=_examples_text(body.style),
+            excerpts=_excerpts_text(body.style),
             text=body.text,
         )
         raw = call_llm(prompt, system="你是一个风格分析助手。", temperature=0.3)
@@ -187,7 +187,7 @@ def analyze(body: AnalyzeRequest):
         prompt = ANALYZE_PROMPT.format(
             dim_title=body.dimension_title,
             dim_desc=dim_desc,
-            examples=_examples_text(body.style),
+            excerpts=_excerpts_text(body.style),
             text=body.text,
         )
         raw = call_llm(prompt, system="你是一个写作诊断专家。", temperature=0.3)
@@ -214,7 +214,7 @@ def inspire(body: InspireRequest):
 
         prompt = INSPIRE_PROMPT.format(
             style_desc=_dimensions_text(body.style),
-            examples=_examples_text(body.style),
+            excerpts=_excerpts_text(body.style),
             target_dims=target_dims,
             variety_text=variety_text,
             text=body.text,
