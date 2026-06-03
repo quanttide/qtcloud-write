@@ -2,7 +2,7 @@
 name = "qtcloud-write-provider"
 version = "0.1.0-alpha.3"
 requires-python = ">=3.11"
-dependencies = ["fastapi", "uvicorn", "hvac", "pydantic-settings", "quanttide-agent"]
+dependencies = ["fastapi", "uvicorn", "pydantic-settings", "quanttide-agent"]
 
-[dependency-groups]
-dev = ["httpx", "pytest"]
+[project.optional-dependencies]
+dev = ["httpx", "pytest", "pact-python"]

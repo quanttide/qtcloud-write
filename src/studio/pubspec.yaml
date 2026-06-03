@@ -12,6 +12,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   flutter_markdown: ^0.7.6
   http: ^1.6.0
+  pact_dart: ^0.2.0
 
 dev_dependencies:
   flutter_test:

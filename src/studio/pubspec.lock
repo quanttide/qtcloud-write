@@ -65,6 +65,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.3.3"
+  ffi:
+    dependency: transitive
+    description:
+      name: ffi
+      sha256: "13a6ccf6a459a125b3fcdb6ec73bd5ff90822e071207c663bfd1f70062d51d18"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.2.1"
   file:
     dependency: transitive
     description:
@@ -170,6 +178,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.1.0"
+  logger:
+    dependency: transitive
+    description:
+      name: logger
+      sha256: "7ad7215c15420a102ec687bb320a7312afd449bac63bfb1c60d9787c27b9767f"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.4.0"
   markdown:
     dependency: transitive
     description:
@@ -210,6 +226,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.0"
+  pact_dart:
+    dependency: "direct main"
+    description:
+      name: pact_dart
+      sha256: "5e092a90859e5db57794f641de472ad71dd46e1c41697a6e94af3a6a6f2d67e6"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.2.0"
   path:
     dependency: transitive
     description:
