@@ -17,6 +17,11 @@ variable "llm_api_key" {
   default     = ""
 }
 
+variable "container_image" {
+  description = "Full ACR image URL for the provider function container."
+  type        = string
+}
+
 variable "llm_base_url" {
   description = "OpenAI-compatible LLM base URL."
   type        = string

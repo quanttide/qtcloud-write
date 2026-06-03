@@ -30,9 +30,10 @@ module "oss" {
 module "fc" {
   source = "./modules/fc"
 
-  service_name  = "qtcloud-write"
-  function_name = "provider"
-  region        = var.region
-  llm_api_key   = var.llm_api_key
-  llm_base_url  = var.llm_base_url
+  service_name    = "qtcloud-write"
+  function_name   = "provider"
+  region          = var.region
+  container_image = var.container_image
+  llm_api_key     = var.llm_api_key
+  llm_base_url    = var.llm_base_url
 }

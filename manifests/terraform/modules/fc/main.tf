@@ -19,6 +19,11 @@ variable "llm_api_key" {
   default   = ""
 }
 
+variable "container_image" {
+  description = "Full ACR image URL for the provider function container."
+  type        = string
+}
+
 variable "llm_base_url" {
   type    = string
   default = "https://api.deepseek.com"
@@ -39,7 +44,7 @@ resource "alicloud_fc_function" "this" {
   ca_port     = 9000
 
   custom_container_config {
-    image   = "${{ vars.ACR_REGISTRY }}/quanttide/qtcloud-write-provider:latest"
+    image   = var.container_image
     command = "uv"
     args    = "run uvicorn app.main:app --host 0.0.0.0 --port 9000"
   }
