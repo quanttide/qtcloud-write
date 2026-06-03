@@ -15,6 +15,6 @@ def get_settings() -> Settings:
         import os
         s.llm_api_key = os.environ.get("DEEPSEEK_API_KEY", s.llm_api_key)
     if not s.data_dir:
-        # 默认取项目根目录下的 data/
-        s.data_dir = str(Path(__file__).parent.parent.parent / "data")
+        # 默认取 src/provider/data/
+        s.data_dir = str(Path(__file__).parent.parent / "data")
     return s
