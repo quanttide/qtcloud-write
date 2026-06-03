@@ -3,6 +3,15 @@ from typing import Optional
 
 MAX_INPUT_LENGTH = 16000
 
+# ── Sample ─────────────────────────────────────────────
+
+class Sample(BaseModel):
+    id: str = ""
+    title: str = ""
+    text: str = ""
+    source: str = ""
+
+
 # ── StyleSample ─────────────────────────────────────────
 
 class Dimension(BaseModel):
