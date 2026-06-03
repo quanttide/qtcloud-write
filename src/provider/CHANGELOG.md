@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.0-alpha.5] - 2026-06-03
+
+- API 完全重写为 StyleSample 驱动：`POST /review` 接受 `style`（含 dimensions/excerpts），返回 `dimension_alignments[]`
+- 新增 `POST /analyze`：深度分析特定维度偏差，返回 root_cause / fix_strategies
+- 新增 `POST /inspire`：生成多个启发式修改建议，支持 variety/target_dimensions 参数
+- 删除旧模型：`ArticleIn` / `ReviewOut` / `ParagraphReview` / `Comparison` / `Suggestion` / `CycleOut`
+- 删除旧端点：`POST /cycle`
+- 删除 `store.py`（StyleStore 由 SQLite 替代）
+- 删除 `services/review.py` / `reflect.py` / `rewrite.py`（逻辑合并到 `main.py`）
+- 新增 `integrated_tests/`：14 个真实 LLM 业务逻辑测试
+- 新增 `pytest-httpx` 测试依赖
+- 测试总数：6 单元 + 14 集成
+
 ## [0.1.0-alpha.4] - 2026-06-03
 
 - `StyleStore` 从内存列表改为 SQLite 持久化（`data/store.db`），重启不丢失
