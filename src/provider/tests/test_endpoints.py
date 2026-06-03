@@ -1,4 +1,4 @@
-"""Tests for review/analyze/inspire endpoints with StyleSample."""
+"""Tests for review/analyze/inspire endpoints."""
 
 import pytest
 from fastapi.testclient import TestClient

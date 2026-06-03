@@ -12,8 +12,6 @@ class Sample(BaseModel):
     source: str = ""
 
 
-# ── StyleSample ─────────────────────────────────────────
-
 class Dimension(BaseModel):
     title: str
     description: str = ""
@@ -27,11 +25,14 @@ class StyleExcerpt(BaseModel):
     note: str = ""
 
 
-class StyleSample(BaseModel):
-    title: str
+class Style(BaseModel):
+    title: str = ""
     description: str = ""
     dimensions: list[Dimension] = Field(default_factory=list)
     excerpts: list[StyleExcerpt] = Field(default_factory=list)
+
+
+
 
 
 
@@ -39,7 +40,7 @@ class StyleSample(BaseModel):
 
 class ReviewRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
-    style: StyleSample
+    style: Style
 
 
 class Deviation(BaseModel):
@@ -63,7 +64,7 @@ class ReviewResponse(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
-    style: StyleSample
+    style: Style
     dimension_title: str = ""
     deviation_description: str = ""
 
@@ -86,7 +87,7 @@ class AnalyzeResponse(BaseModel):
 
 class InspireRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
-    style: StyleSample
+    style: Style
     target_dimensions: list[str] = Field(default_factory=list)
     inspiration_count: int = 3
     variety: str = "balanced"

@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.models import (
-    StyleSample, ReviewRequest, ReviewResponse, DimensionAlignment, Deviation,
+    Style, ReviewRequest, ReviewResponse, DimensionAlignment, Deviation,
     AnalyzeRequest, AnalyzeResponse, FixStrategy,
     InspireRequest, InspireResponse, Inspiration,
 )
@@ -27,7 +27,7 @@ app = FastAPI(title="写作云 Provider", version="0.2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
-def _dimensions_text(style: StyleSample) -> str:
+def _dimensions_text(style: Style) -> str:
     lines = []
     for d in style.dimensions:
         lines.append(f"## {d.title}")
@@ -40,7 +40,7 @@ def _dimensions_text(style: StyleSample) -> str:
     return "\n".join(lines)
 
 
-def _excerpts_text(style: StyleSample) -> str:
+def _excerpts_text(style: Style) -> str:
     lines = []
     for ex in style.excerpts:
         lines.append(f"[{ex.dimension}] {ex.paragraph}")
