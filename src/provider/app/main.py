@@ -16,18 +16,18 @@ app.add_middleware(
 
 @app.post("/review", response_model=ReviewOut)
 async def review(article_in: ArticleIn):
+    art = Article(
+        id="",
+        title=article_in.title,
+        paragraphs=article_in.paragraphs,
+        author=article_in.author,
+        tag=article_in.tag,
+    )
     if article_in.tag == "good":
-        art = Article(
-            id="",
-            title=article_in.title,
-            paragraphs=article_in.paragraphs,
-            author=article_in.author,
-            tag=article_in.tag,
-        )
         style_store.add_good(art)
 
     is_style = style_store.is_available
-    para_reviews, raw_suggestions = review_article(article_in, is_style)
+    para_reviews, raw_suggestions = review_article(art, is_style, style_store.good_articles)
     suggestions = [Suggestion(**s) for s in raw_suggestions]
 
     if article_in.tag == "good":

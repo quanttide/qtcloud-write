@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: qtcloud-write-provider
+Version: 0.1.0a2
+Requires-Python: >=3.11
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: hvac
+Requires-Dist: pydantic-settings
+Requires-Dist: quanttide-agent
