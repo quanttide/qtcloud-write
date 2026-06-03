@@ -11,7 +11,7 @@ from app.models import Comparison
 
 
 REVIEW_3R_RESP = '{"genre":"重逢场景","intent":"营造暧昧氛围","stage":"初稿","summary":"他推门看到她坐在窗边"}'
-REFLECT_RESP = '[{"gap_type":"action_gap","location":"开门后","detail":"缺少过渡","structure":"叙事断裂","psychology":"人物反应缺失","reader":"期待落空","craft":"无意识忽略","root_cause":"动作描写不完整"}]'
+REFLECT_RESP = '[{"gap_type":"action_gap","location":"开门后","line":1,"detail":"缺少过渡","structure":"叙事断裂","psychology":"人物反应缺失","reader":"期待落空","craft":"无意识忽略","root_cause":"动作描写不完整"}]'
 REWRITE_RESP = "他推开门，看到她坐在窗边。阳光透过窗帘洒在她的脸上。"
 
 

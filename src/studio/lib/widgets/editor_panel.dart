@@ -16,6 +16,7 @@ class EditorPanel extends StatefulWidget {
 class _EditorPanelState extends State<EditorPanel> {
   late TextEditingController _textCtrl;
   late ScrollController _scrollCtrl;
+  late FocusNode _focusNode;
   int _lineCount = 0;
   var _isPreview = false;
 
@@ -24,6 +25,7 @@ class _EditorPanelState extends State<EditorPanel> {
     super.initState();
     _textCtrl = TextEditingController(text: widget.cubit.state.text);
     _scrollCtrl = ScrollController();
+    _focusNode = FocusNode();
     widget.cubit.stream.listen((state) {
       if (state.pendingJumpLine != null) {
         _doJump(state.pendingJumpLine!);
@@ -41,6 +43,7 @@ class _EditorPanelState extends State<EditorPanel> {
   void dispose() {
     _textCtrl.dispose();
     _scrollCtrl.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -57,6 +60,7 @@ class _EditorPanelState extends State<EditorPanel> {
   }
 
   void _doJump(int line) {
+    _focusNode.requestFocus();
     final offset = (line - 1) * GapMarkersColumn.lineHeight - 60;
     if (_scrollCtrl.hasClients) {
       _scrollCtrl.animateTo(
@@ -145,6 +149,7 @@ class _EditorPanelState extends State<EditorPanel> {
         Container(width: 1, color: WritingColors.border),
         Expanded(
           child: TextField(
+            focusNode: _focusNode,
             controller: _textCtrl,
             scrollController: _scrollCtrl,
             maxLines: null,

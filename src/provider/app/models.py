@@ -54,6 +54,7 @@ class Review3ROut(BaseModel):
 class GapAnalysis(BaseModel):
     gap_type: str
     location: str
+    line: int = 0
     detail: str
     structure: str
     psychology: str
