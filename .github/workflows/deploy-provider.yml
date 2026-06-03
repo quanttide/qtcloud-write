@@ -1,14 +1,8 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/deploy-provider.yml'
-      - 'manifests/iac/**'
-      - 'scripts/deploy-provider.sh'
-      - 'src/provider/**'
+  workflow_dispatch:
+    # 暂时取消自动触发，仅保留手动触发
 
 jobs:
   build-and-push:
