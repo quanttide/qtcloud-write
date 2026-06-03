@@ -8,9 +8,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.models import (
-    TextIn, ReviewOut, Review3ROut, GapAnalysis, RewriteOut, CycleOut,
+    TextIn, ReviewOut, Review3ROut, GapAnalysis, RewriteRequest, RewriteOut,
     ParagraphReview, Comparison, Suggestion, StyleUsage,
-    StyleSample, ReviewOptions,
+    StyleSample, ReviewOptions, Location,
 )
 from app.services.llm import call_llm
 from app.services.reflect import cmd_reflect as reflect_cmd
@@ -137,33 +137,45 @@ def reflect(body: TextIn):
     try:
         review_3r = cmd_review_3r(body.text)
         gaps = reflect_cmd(body.text, review_3r.genre, review_3r.intent, review_3r.stage)
-        return [GapAnalysis(**g) for g in gaps]
+        return [
+            GapAnalysis(
+                gap_id=g.get("gap_id", f"gap_{i:03d}"),
+                gap_type=g.get("gap_type", "unknown"),
+                location=Location(
+                    start_char=g.get("location", {}).get("start_char", 0),
+                    end_char=g.get("location", {}).get("end_char", 0),
+                    text_snippet=g.get("location", {}).get("text_snippet", ""),
+                ),
+                detail=g.get("detail", ""),
+                multi_dimensions=g.get("multi_dimensions", {}),
+                craft=g.get("craft", "无意识忽略"),
+                root_cause=g.get("root_cause", ""),
+                suggested_fix=g.get("suggested_fix", ""),
+            )
+            for i, g in enumerate(gaps)
+        ]
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
 
 @app.post("/rewrite", response_model=RewriteOut)
-def rewrite(body: TextIn):
+def rewrite(body: RewriteRequest):
     try:
         review_3r = cmd_review_3r(body.text)
-        gaps = reflect_cmd(body.text, review_3r.genre, review_3r.intent, review_3r.stage)
-        result = rewrite_cmd(body.text, review_3r.genre, review_3r.intent, gaps)
-        return RewriteOut(text=result, length=len(result))
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        all_gaps = reflect_cmd(body.text, review_3r.genre, review_3r.intent, review_3r.stage)
 
+        # 如果 gaps_to_fix 未指定，默认修复所有非有意留白
+        if body.gaps_to_fix is None:
+            body.gaps_to_fix = [g.get("gap_id", f"gap_{i:03d}") for i, g in enumerate(all_gaps) if g.get("craft") != "有意识留白"]
 
-@app.post("/cycle", response_model=CycleOut)
-def cycle(body: TextIn):
-    try:
-        review_3r = cmd_review_3r(body.text)
-        gaps = reflect_cmd(body.text, review_3r.genre, review_3r.intent, review_3r.stage)
-        rewritten = rewrite_cmd(body.text, review_3r.genre, review_3r.intent, gaps)
-        return CycleOut(
-            review=review_3r,
-            reflect=[GapAnalysis(**g) for g in gaps],
-            rewrite=RewriteOut(text=rewritten, length=len(rewritten)),
+        new_text, changes, unfixed = rewrite_cmd(
+            body.text,
+            review_3r.genre,
+            review_3r.intent,
+            all_gaps,
+            body.gaps_to_fix,
         )
+        return RewriteOut(text=new_text, length=len(new_text), changes=changes, unfixed_gaps=unfixed)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 

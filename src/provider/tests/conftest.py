@@ -8,8 +8,8 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from app.main import app
 REVIEW_3R_RESP = '{"genre":"重逢场景","intent":"营造暧昧氛围","stage":"初稿","summary":"他推门看到她坐在窗边"}'
-REFLECT_RESP = '[{"gap_type":"action_gap","location":"开门后","line":1,"detail":"缺少过渡","structure":"叙事断裂","psychology":"人物反应缺失","reader":"期待落空","craft":"无意识忽略","root_cause":"动作描写不完整"}]'
-REWRITE_RESP = "他推开门，看到她坐在窗边。阳光透过窗帘洒在她的脸上。"
+REFLECT_RESP = '[{"gap_id":"gap_001","gap_type":"action_gap","location":{"start_char":0,"end_char":10,"text_snippet":"他推开门"},"detail":"缺少过渡","multi_dimensions":{"structure":"叙事断裂","psychology":"人物反应缺失","reader":"期待落空"},"craft":"无意识忽略","root_cause":"动作描写不完整","suggested_fix":"冷风扑面而来，他裹紧了外套。"}]'
+REWRITE_RESP = '{"text":"他推开门，看到她坐在窗边。阳光透过窗帘洒在她的脸上。","changes":[{"gap_id":"gap_001","original_snippet":"他推开门走了出来","replaced_with":"他推开门，看到她坐在窗边"}],"unfixed_gaps":[]}'
 REVIEW_SUMMARY_RESP = '{"summary":"评审结论摘要"}'
 
 

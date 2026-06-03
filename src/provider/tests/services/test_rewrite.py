@@ -5,25 +5,25 @@ from app.services.rewrite import cmd_rewrite
 
 class TestCmdRewrite:
     def test_returns_original_when_no_analysis(self):
-        result = cmd_rewrite("hello world", genre="test", intent="test", analysis=None)
-        assert result == "hello world"
+        text, changes, unfixed = cmd_rewrite("hello world", genre="test", intent="test", analysis=None)
+        assert text == "hello world"
+        assert changes == []
 
     def test_returns_original_when_empty_analysis(self):
-        result = cmd_rewrite("hello world", genre="test", intent="test", analysis=[])
-        assert result == "hello world"
+        text, changes, unfixed = cmd_rewrite("hello world", genre="test", intent="test", analysis=[])
+        assert text == "hello world"
+        assert changes == []
 
     def test_returns_rewritten_text_with_analysis(self):
         analysis = [
             {
+                "gap_id": "gap_001",
                 "gap_type": "action_gap",
                 "detail": "缺少动作衔接",
-                "structure": "断裂",
-                "psychology": "缺失",
-                "reader": "落空",
                 "craft": "无意识忽略",
-                "root_cause": "描写不完整",
+                "suggested_fix": "补充动作描写",
             }
         ]
-        result = cmd_rewrite("hello world", genre="test", intent="test", analysis=analysis)
-        assert isinstance(result, str)
-        assert len(result) > 0
+        text, changes, unfixed = cmd_rewrite("hello world", genre="test", intent="test", analysis=analysis)
+        assert isinstance(text, str)
+        assert len(text) > 0

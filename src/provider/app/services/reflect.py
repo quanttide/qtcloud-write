@@ -9,7 +9,7 @@ REFLECT_PROMPT = """你是一个写作诊断专家。以下是对当前文本的
 意图：{intent}
 阶段：{stage}
 
-请检测文本中的写作空隙，并对每个空隙从 4 个角度分析深层原因。
+请检测文本中的写作空隙，给出具体的修改建议。
 
 空隙类型（5 种）：
 - time_jump：时间跳跃没有过渡标记
@@ -21,19 +21,26 @@ REFLECT_PROMPT = """你是一个写作诊断专家。以下是对当前文本的
 必须输出 JSON 数组，格式如下（不要额外文字）：
 [
   {{
-    "gap_type": "time_jump",
-    "location": "具体的段落位置描述",
-    "line": 1（空隙所在的行号，从 1 开始计数。若无法精确到行，填最近的行号或 0）,
+    "gap_id": "gap_001"（唯一标识，递增）,
+    "gap_type": "action_gap",
+    "location": {{
+      "start_char": 12（问题起点的字符偏移）,
+      "end_char": 34（问题终点的字符偏移）,
+      "text_snippet": "问题所在位置的文本片段"
+    }},
     "detail": "问题说明",
-    "structure": "叙事结构角度的归因",
-    "psychology": "人物心理角度的归因",
-    "reader": "读者期待角度的归因",
+    "multi_dimensions": {{
+      "structure": "叙事结构角度的归因",
+      "psychology": "人物心理角度的归因",
+      "reader": "读者期待角度的归因"
+    }},
     "craft": "有意识留白 或 无意识忽略",
-    "root_cause": "一句话总结根本原因"
+    "root_cause": "一句话总结根本原因",
+    "suggested_fix": "具体的修改示范文本"
   }}
 ]
 
-文本（每行以换行符分隔）：
+文本：
 {text}"""
 
 

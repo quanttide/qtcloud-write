@@ -70,12 +70,3 @@ class TestRewrite:
         assert data["length"] > 0
 
 
-class TestCycle:
-    def test_returns_all_three(self, client):
-        resp = client.post("/cycle", json={"text": "测试文本"})
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "review" in data
-        assert "reflect" in data
-        assert "rewrite" in data
-        assert data["review"]["genre"]
