@@ -1,5 +1,11 @@
+import logging
+import logging.handlers
+from pathlib import Path
+
+import uuid
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from app.config import get_settings
 from app.models import (
     ArticleIn, TextIn, Article,
     ReviewOut, Review3ROut, GapAnalysis, RewriteOut, CycleOut,
@@ -10,6 +16,15 @@ from app.services.review import review_article
 from app.services.reflect import cmd_reflect as reflect_cmd
 from app.services.rewrite import cmd_rewrite as rewrite_cmd
 from app.services.llm import call_llm
+
+# 日志配置
+settings = get_settings()
+log_dir = Path(settings.data_dir)
+log_dir.mkdir(parents=True, exist_ok=True)
+handler = logging.handlers.TimedRotatingFileHandler(str(log_dir / "provider.log"), when="midnight", backupCount=7, encoding="utf-8")
+handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+logging.getLogger().addHandler(handler)
+logging.getLogger().setLevel(logging.INFO)
 
 app = FastAPI(title="写作云 Provider", version="0.1")
 
@@ -57,7 +72,7 @@ def cmd_review_3r(text: str) -> Review3ROut:
 def review(article_in: ArticleIn):
     try:
         art = Article(
-            id="",
+            id=str(uuid.uuid4()),
             title=article_in.title,
             paragraphs=article_in.paragraphs,
             author=article_in.author,

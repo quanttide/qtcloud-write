@@ -13,7 +13,8 @@ def client():
 
 @pytest.fixture(autouse=True)
 def reset_store():
-    style_store._good_articles.clear()
+    """Reset style accumulation between tests."""
+    style_store.clear()
     yield
 
 
