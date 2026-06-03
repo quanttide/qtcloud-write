@@ -20,11 +20,13 @@
 
 ### P0 — 统一管线（消除盲区 1、4）
 
-- [ ] `docker compose up` 一键启动全套（provider + studio），Flutter 开发模式默认连本地 provider
 - [ ] `runReview()` 的 provider 路径改为**同步必走**（不再 try/catch 静默降级），provider 不可用时评审按钮直接禁用并提示"启动 provider 后再评审"
-- [ ] 正则引擎 `AnalysisEngine.analyze()` 仅保留在"加载样本"的 demo 场景，不作为正式评审路径
+- [ ] 去掉 `AnalysisEngine.analyze()` 作为 `runReview()` 的回退路径（不再走正则）
+- [ ] `isUsingProvider` 展示到 UI（底部状态栏或结果面板头部），用户明确知道当前是"AI 分析"还是"本地分析（离线）"
+- [ ] 合并三 Tab 为一个结果面板：评审按钮只调 `/cycle`，返回 unified 结果展示在单一面板
+- [ ] `docker compose up` 一键启动全套
 - [ ] `scripts/deploy-local.sh` 增加健康检查：等待 provider 就绪后再启动 studio
-- [ ] 删掉 `AnalysisEngine.analyze()` 作为 `runReview()` 的回退路径
+- [ ] 删掉 `AnalysisEngine.analyze()`（正则引擎不再作为评审路径）
 
 ### P0 — 测试分层（消除盲区 2）
 
@@ -50,8 +52,7 @@
 
 ### P2 — 体验打磨
 
-- [ ] Provider 可用时，评审结果展示起承转合段落分析 + summary（已有 UI，但数据来自 provider 才显示）
-- [ ] 底部状态栏在 Provider 模式下显示"AI 分析"标记，正则模式下显示"本地分析（离线）"标记
+- [ ] Provider 可用时，评审结果展示起承转合段落分析 + summary
 - [ ] 编辑器空隙标记列在 Provider 模式下标记来自后端的 gap line 数据
 - [ ] 多轮迭代：Cubit 维护评分历史，展示简单趋势
 

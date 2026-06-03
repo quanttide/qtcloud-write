@@ -61,3 +61,15 @@
 ### 样本仅存在于前端
 
 测试样本（good/bad 文章）只被 Python 测试使用。Flutter 前端没有从 `tests/fixtures/` 加载样本的入口，也没有从后端获取样本的 API。前后端各有自己的样本数据。
+
+### 3R 三 Tab 是后端 API 粒度的直接镜像
+
+三个 Tab（review / reflect / rewrite）对应后端的三个独立端点，但用户不关心管线阶段。`/cycle` 端点一次返回完整一轮结果，前端却放着不用，自己拆成三个 Tab 各自调用独立端点。应合并为一个结果面板，一次 `/cycle` 调用。
+
+### 静默回退让 AI 失败对用户不可见
+
+`runReview()` 在 Provider 不可用时用 `try/catch` 静默降级到正则分析，`isUsingProvider` 字段存在但不展示。用户看到"评审结果"，无法区分是 AI 分析还是正则规则。应在 UI 明确标注"AI 分析"或"本地分析（离线）"。
+
+### 代码默认行为是"不让 AI 介入"
+
+每一处"AI 不行就算了"的设计累积起来，暗示 AI 是可有可无的附加功能。`loadSample()` 默认不走 Provider，`runReview()` 静默回退，`_deepService` 曾经可空——系统默认不尝试 AI。修正方向：默认走 AI，失败要醒目，而不是"AI 不行就用正则糊弄"。
