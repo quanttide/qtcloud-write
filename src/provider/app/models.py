@@ -23,7 +23,7 @@ class StyleSample(BaseModel):
     description: str = ""
     dimensions: list[Dimension] = Field(default_factory=list)
     excerpts: list[StyleExcerpt] = Field(default_factory=list)
-    samples: list[str] = Field(default_factory=list)
+
 
 
 # ── Review ─────────────────────────────────────────────
