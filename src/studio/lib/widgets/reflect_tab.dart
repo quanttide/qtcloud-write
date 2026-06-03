@@ -10,8 +10,10 @@ class ReflectTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final situations = cubit.state.analysis?.situations ?? [];
-    if (situations.isEmpty) {
+    final state = cubit.state;
+    final situations = state.analysis?.situations ?? [];
+
+    if (situations.isEmpty && state.deepAnalysis == null) {
       return const Center(
         child: Text(
           '暂无识别到的可写位置。',
@@ -25,20 +27,12 @@ class ReflectTab extends StatelessWidget {
       children: [
         const Text(
           '可写位置 — 点击「写在这里」跳转到编辑器对应行',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: WritingColors.textDim,
-            letterSpacing: 0.8,
-          ),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.textDim, letterSpacing: 0.8),
         ),
         const SizedBox(height: 8),
         ...situations.map((s) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: GuideCard.situation(
-                s,
-                onJumpTo: () => cubit.jumpToLine(s.line),
-              ),
+              child: GuideCard.situation(s, onJumpTo: () => cubit.jumpToLine(s.line)),
             )),
       ],
     );

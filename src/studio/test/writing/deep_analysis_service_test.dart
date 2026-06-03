@@ -1,30 +1,32 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qtcloud_write_studio/blocs/writing_review_cubit.dart';
 
+
 void main() {
   group('WritingReviewCubit deep analysis', () {
-    test('runDeepAnalysis with no service sets error', () async {
+    test('runReview with no service falls back to local analysis', () async {
       final cubit = WritingReviewCubit();
       cubit.textChanged('test text');
-      await cubit.runDeepAnalysis();
-      expect(cubit.state.deepError, contains('未配置'));
-      expect(cubit.state.isDeepAnalyzing, isFalse);
+      await cubit.runReview();
+      // No deep service → fallback to local
+      expect(cubit.state.isUsingProvider, isFalse);
+      expect(cubit.state.analysis, isNotNull);
       cubit.close();
     });
 
-    test('runDeepAnalysis with empty text does nothing', () async {
+    test('runReview with empty text does nothing', () async {
       final cubit = WritingReviewCubit();
-      await cubit.runDeepAnalysis();
+      await cubit.runReview();
+      expect(cubit.state.analysis, isNull);
       expect(cubit.state.deepAnalysis, isNull);
-      expect(cubit.state.deepError, isNull);
       cubit.close();
     });
 
-    test('initial deep analysis state is null', () {
+    test('initial analysis state is null', () {
       final cubit = WritingReviewCubit();
+      expect(cubit.state.analysis, isNull);
       expect(cubit.state.deepAnalysis, isNull);
-      expect(cubit.state.isDeepAnalyzing, isFalse);
-      expect(cubit.state.deepError, isNull);
+      expect(cubit.state.isUsingProvider, isFalse);
       cubit.close();
     });
   });
