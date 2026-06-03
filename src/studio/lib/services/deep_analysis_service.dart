@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/review.dart';
+import '../models/deep_analysis.dart';
 
-class ApiService {
+class DeepAnalysisService {
   final String baseUrl;
 
-  ApiService(this.baseUrl);
+  DeepAnalysisService(this.baseUrl);
 
-  Future<Review> submitReview({
+  Future<DeepReview> submitReview({
     required String title,
     required List<String> paragraphs,
     required String author,
@@ -25,7 +25,7 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return Review.fromJson(jsonDecode(response.body));
+      return DeepReview.fromJson(jsonDecode(response.body));
     }
 
     String detail = '';
@@ -34,6 +34,6 @@ class ApiService {
       detail = body['detail']?.toString() ?? '';
     } catch (_) {}
 
-    throw Exception('评审请求失败 ($response.statusCode)${detail.isNotEmpty ? ': $detail' : ''}');
+    throw Exception('深度分析请求失败 ($response.statusCode)${detail.isNotEmpty ? ': $detail' : ''}');
   }
 }

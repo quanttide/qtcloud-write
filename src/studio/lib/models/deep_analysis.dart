@@ -1,37 +1,37 @@
-class ParagraphReview {
+class DeepParagraphReview {
   final String original;
   final String analysis;
   final String tag;
-  final Comparison? comparison;
+  final DeepComparison? comparison;
 
-  ParagraphReview({
+  DeepParagraphReview({
     required this.original,
     required this.analysis,
     required this.tag,
     this.comparison,
   });
 
-  factory ParagraphReview.fromJson(Map<String, dynamic> json) {
-    return ParagraphReview(
+  factory DeepParagraphReview.fromJson(Map<String, dynamic> json) {
+    return DeepParagraphReview(
       original: json['original'],
       analysis: json['analysis'],
       tag: json['tag'],
       comparison: json['comparison'] != null
-          ? Comparison.fromJson(json['comparison'])
+          ? DeepComparison.fromJson(json['comparison'])
           : null,
     );
   }
 }
 
-class Comparison {
+class DeepComparison {
   final String type;
   final String? issue;
   final String? demo;
 
-  Comparison({required this.type, this.issue, this.demo});
+  DeepComparison({required this.type, this.issue, this.demo});
 
-  factory Comparison.fromJson(Map<String, dynamic> json) {
-    return Comparison(
+  factory DeepComparison.fromJson(Map<String, dynamic> json) {
+    return DeepComparison(
       type: json['type'],
       issue: json['issue'],
       demo: json['demo'],
@@ -39,15 +39,15 @@ class Comparison {
   }
 }
 
-class Suggestion {
+class DeepSuggestion {
   final int priority;
   final String action;
   final String detail;
 
-  Suggestion({required this.priority, required this.action, required this.detail});
+  DeepSuggestion({required this.priority, required this.action, required this.detail});
 
-  factory Suggestion.fromJson(Map<String, dynamic> json) {
-    return Suggestion(
+  factory DeepSuggestion.fromJson(Map<String, dynamic> json) {
+    return DeepSuggestion(
       priority: json['priority'],
       action: json['action'],
       detail: json['detail'],
@@ -55,16 +55,16 @@ class Suggestion {
   }
 }
 
-class Review {
+class DeepReview {
   final String articleTitle;
   final String author;
   final String tag;
   final String summary;
-  final List<ParagraphReview> paragraphs;
+  final List<DeepParagraphReview> paragraphs;
   final bool isStyleAvailable;
-  final List<Suggestion> suggestions;
+  final List<DeepSuggestion> suggestions;
 
-  Review({
+  DeepReview({
     required this.articleTitle,
     required this.author,
     required this.tag,
@@ -74,18 +74,18 @@ class Review {
     required this.suggestions,
   });
 
-  factory Review.fromJson(Map<String, dynamic> json) {
-    return Review(
+  factory DeepReview.fromJson(Map<String, dynamic> json) {
+    return DeepReview(
       articleTitle: json['article_title'],
       author: json['author'],
       tag: json['tag'],
       summary: json['summary'],
       paragraphs: (json['paragraphs'] as List)
-          .map((p) => ParagraphReview.fromJson(p))
+          .map((p) => DeepParagraphReview.fromJson(p))
           .toList(),
       isStyleAvailable: json['is_style_available'],
       suggestions: (json['suggestions'] as List)
-          .map((s) => Suggestion.fromJson(s))
+          .map((s) => DeepSuggestion.fromJson(s))
           .toList(),
     );
   }
