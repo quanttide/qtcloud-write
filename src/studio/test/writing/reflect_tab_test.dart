@@ -14,14 +14,14 @@ Widget _buildApp(WritingReviewCubit cubit) {
 void main() {
   group('ReflectTab', () {
     testWidgets('shows placeholder when no analysis', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       await tester.pumpWidget(_buildApp(cubit));
-      expect(find.text('暂无识别到的可写位置。'), findsOneWidget);
+      expect(find.text('等待评审...'), findsOneWidget);
       cubit.close();
     });
 
     testWidgets('shows situations when analysis has gaps', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.loadSample();
       await tester.pumpWidget(_buildApp(cubit));
       await tester.pump();
@@ -30,7 +30,7 @@ void main() {
     });
 
     testWidgets('tapping a situation card button triggers jump', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.textChanged('第二天，他推开门走了出去。');
       cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));

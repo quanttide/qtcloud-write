@@ -20,7 +20,7 @@ Widget _buildApp(WritingReviewCubit cubit) {
 void main() {
   group('ReviewPanel', () {
     testWidgets('shows phase bar and tabs', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       await tester.pumpWidget(_buildApp(cubit));
       await tester.pump();
       expect(find.text('Review'), findsOneWidget);

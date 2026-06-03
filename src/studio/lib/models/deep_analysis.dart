@@ -63,6 +63,7 @@ class DeepReview {
   final List<DeepParagraphReview> paragraphs;
   final bool isStyleAvailable;
   final List<DeepSuggestion> suggestions;
+  final bool isFromRemote;
 
   DeepReview({
     required this.articleTitle,
@@ -72,6 +73,7 @@ class DeepReview {
     required this.paragraphs,
     required this.isStyleAvailable,
     required this.suggestions,
+    this.isFromRemote = false,
   });
 
   factory DeepReview.fromJson(Map<String, dynamic> json) {

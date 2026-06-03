@@ -14,14 +14,14 @@ Widget _buildApp(WritingReviewCubit cubit) {
 void main() {
   group('RewriteTab', () {
     testWidgets('shows placeholder when no analysis', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       await tester.pumpWidget(_buildApp(cubit));
-      expect(find.text('暂无改写建议。'), findsOneWidget);
+      expect(find.text('等待评审...'), findsOneWidget);
       cubit.close();
     });
 
     testWidgets('shows suggestions when analysis has rewrites', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.textChanged('他悲伤地看着她。\n她开心地笑了。\n他走了过去。');
       cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));
@@ -31,7 +31,7 @@ void main() {
     });
 
     testWidgets('tapping a suggestion button triggers jump', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.textChanged('他悲伤地看着她。\n她开心地笑了。\n他走了过去。');
       cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));

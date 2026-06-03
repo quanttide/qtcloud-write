@@ -4,65 +4,61 @@ import 'package:qtcloud_write_studio/blocs/writing_review_cubit.dart';
 void main() {
   group('WritingReviewCubit', () {
     test('initial state is correct', () {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       expect(cubit.state.text, isEmpty);
-      expect(cubit.state.analysis, isNull);
+      expect(cubit.state.deepAnalysis, isNull);
       expect(cubit.state.currentTab, ReviewPanelTab.review);
       expect(cubit.state.round, 1);
       expect(cubit.state.isLoading, isFalse);
       expect(cubit.state.charCount, 0);
-      expect(cubit.state.gapCount, 0);
       cubit.close();
     });
 
     test('textChanged updates text', () {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.textChanged('hello world');
       expect(cubit.state.text, 'hello world');
       expect(cubit.state.charCount, 11);
       cubit.close();
     });
 
-    test('textChanged preserves analysis', () {
-      final cubit = WritingReviewCubit();
-      cubit.loadSample();
-      expect(cubit.state.analysis, isNotNull);
-      final originalScore = cubit.state.avgScore;
+    test('textChanged preserves analysis', () async {
+      final cubit = WritingReviewCubit.test();
+      await cubit.loadSample();
+      expect(cubit.state.deepAnalysis, isNotNull);
+      final originalSummary = cubit.state.deepAnalysis!.summary;
       cubit.textChanged('modified text');
-      expect(cubit.state.analysis, isNotNull);
-      expect(cubit.state.avgScore, originalScore);
+      expect(cubit.state.deepAnalysis, isNotNull);
+      expect(cubit.state.deepAnalysis!.summary, originalSummary);
       cubit.close();
     });
 
-    test('runReview with empty text does nothing', () {
-      final cubit = WritingReviewCubit();
-      cubit.runReview();
-      expect(cubit.state.analysis, isNull);
+    test('runReview with empty text does nothing', () async {
+      final cubit = WritingReviewCubit.test();
+      await cubit.runReview();
+      expect(cubit.state.deepAnalysis, isNull);
       cubit.close();
     });
 
-    test('runReview analyzes text', () {
-      final cubit = WritingReviewCubit();
-      cubit.textChanged('他推开门走了进去。第二天，他又来了。');
-      cubit.runReview();
-      expect(cubit.state.analysis, isNotNull);
-      expect(cubit.state.gapCount, greaterThan(0));
-      expect(cubit.state.avgScore, greaterThan(0));
+    test('runReview analyzes text', () async {
+      final cubit = WritingReviewCubit.test();
+      cubit.textChanged('test content');
+      await cubit.runReview();
+      expect(cubit.state.deepAnalysis, isNotNull);
       expect(cubit.state.isLoading, isFalse);
       cubit.close();
     });
 
-    test('loadSample loads and analyzes sample text', () {
-      final cubit = WritingReviewCubit();
-      cubit.loadSample();
+    test('loadSample loads and analyzes sample text', () async {
+      final cubit = WritingReviewCubit.test();
+      await cubit.loadSample();
       expect(cubit.state.text, isNotEmpty);
-      expect(cubit.state.analysis, isNotNull);
-      expect(cubit.state.gapCount, greaterThan(0));
+      expect(cubit.state.deepAnalysis, isNotNull);
       cubit.close();
     });
 
     test('switchTab changes current tab', () {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       expect(cubit.state.currentTab, ReviewPanelTab.review);
       cubit.switchTab(ReviewPanelTab.reflect);
       expect(cubit.state.currentTab, ReviewPanelTab.reflect);
@@ -73,17 +69,17 @@ void main() {
       cubit.close();
     });
 
-    test('jumpToLine sets pendingJumpLine', () {
-      final cubit = WritingReviewCubit();
-      cubit.loadSample();
+    test('jumpToLine sets pendingJumpLine', () async {
+      final cubit = WritingReviewCubit.test();
+      await cubit.loadSample();
       cubit.jumpToLine(5);
       expect(cubit.state.pendingJumpLine, 5);
       cubit.close();
     });
 
-    test('clearPendingJump resets pendingJumpLine', () {
-      final cubit = WritingReviewCubit();
-      cubit.loadSample();
+    test('clearPendingJump resets pendingJumpLine', () async {
+      final cubit = WritingReviewCubit.test();
+      await cubit.loadSample();
       cubit.jumpToLine(5);
       expect(cubit.state.pendingJumpLine, 5);
       cubit.clearPendingJump();
@@ -92,7 +88,7 @@ void main() {
     });
 
     test('multiple text changes work sequentially', () {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.textChanged('a');
       expect(cubit.state.text, 'a');
       cubit.textChanged('ab');
@@ -103,15 +99,13 @@ void main() {
       cubit.close();
     });
 
-    test('loadSample can be called multiple times', () {
-      final cubit = WritingReviewCubit();
-      cubit.loadSample();
-      expect(cubit.state.analysis, isNotNull);
-      final firstScore = cubit.state.avgScore;
+    test('loadSample can be called multiple times', () async {
+      final cubit = WritingReviewCubit.test();
+      await cubit.loadSample();
+      expect(cubit.state.deepAnalysis, isNotNull);
       cubit.textChanged('modified');
-      cubit.loadSample();
-      expect(cubit.state.analysis, isNotNull);
-      expect(cubit.state.avgScore, firstScore);
+      await cubit.loadSample();
+      expect(cubit.state.deepAnalysis, isNotNull);
       cubit.close();
     });
   });

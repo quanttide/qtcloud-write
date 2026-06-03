@@ -101,17 +101,6 @@ class _EditorPanelState extends State<EditorPanel> {
       ),
       child: Row(
         children: [
-          if (!_isPreview)
-            Row(
-              children: [
-                Text('空隙 ',
-                    style: TextStyle(
-                        fontSize: 11, color: WritingColors.textDim)),
-                Text('${widget.cubit.state.gapCount}',
-                    style: const TextStyle(
-                        fontSize: 11, color: WritingColors.text)),
-              ],
-            ),
           const Spacer(),
           _ModeToggle(
             isPreview: _isPreview,
@@ -137,16 +126,6 @@ class _EditorPanelState extends State<EditorPanel> {
 
     return Row(
       children: [
-        Container(
-          width: 18,
-          color: WritingColors.surface,
-          child: GapMarkersColumn(
-            gaps: widget.cubit.state.analysis?.gaps ?? [],
-            lineCount: _lineCount,
-            onJumpTo: _jumpToLine,
-          ),
-        ),
-        Container(width: 1, color: WritingColors.border),
         Expanded(
           child: TextField(
             focusNode: _focusNode,

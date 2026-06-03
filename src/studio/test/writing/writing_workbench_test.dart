@@ -19,7 +19,7 @@ Widget _buildApp(WritingReviewCubit cubit) {
 void main() {
   group('WritingWorkbench', () {
     testWidgets('renders all panels', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       await tester.pumpWidget(_buildApp(cubit));
       expect(find.text('✎ 写作云'), findsOneWidget);
       expect(find.text('▶ 评审'), findsOneWidget);
@@ -31,7 +31,7 @@ void main() {
     });
 
     testWidgets('load sample button triggers loadSample', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       await tester.pumpWidget(_buildApp(cubit));
       expect(find.byType(TextField), findsOneWidget);
       await tester.tap(find.text('加载样本'));
@@ -41,17 +41,17 @@ void main() {
     });
 
     testWidgets('review button triggers analysis', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.textChanged('第二天，他来了。');
       await tester.pumpWidget(_buildApp(cubit));
       await tester.tap(find.text('▶ 评审'));
       await tester.pump();
-      expect(cubit.state.analysis, isNotNull);
+      expect(cubit.state.deepAnalysis, isNotNull);
       cubit.close();
     });
 
     testWidgets('switches review tabs', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.loadSample();
       await tester.pumpWidget(_buildApp(cubit));
       await tester.tap(find.text('🎯 情境'));
@@ -64,7 +64,7 @@ void main() {
     });
 
     testWidgets('shows status bar with counts', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.loadSample();
       await tester.pumpWidget(_buildApp(cubit));
       expect(find.text(cubit.state.charCount.toString()), findsWidgets);

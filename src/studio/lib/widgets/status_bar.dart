@@ -30,19 +30,13 @@ class StatusBar extends StatelessWidget {
               color: WritingColors.text,
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            '空隙 ',
-            style: TextStyle(fontSize: 11, color: WritingColors.textDim),
-          ),
-          Text(
-            '${cubit.state.gapCount}',
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: WritingColors.text,
+          if (cubit.state.deepAnalysis != null) ...[
+            const SizedBox(width: 12),
+            Text(
+              cubit.state.isUsingProvider ? 'AI分析' : '本地分析',
+              style: TextStyle(fontSize: 11, color: WritingColors.textDim),
             ),
-          ),
+          ],
         ],
       ),
     );

@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'blocs/writing_review_cubit.dart';
-import 'services/deep_analysis_service.dart';
+import 'services/analysis_service.dart';
+import 'services/local_analysis_service.dart';
+import 'services/remote_analysis_service.dart';
 import 'themes/writing_theme.dart';
 import 'widgets/writing_workbench.dart';
 
 void main() {
   final providerUrl =
       const String.fromEnvironment('PROVIDER_URL', defaultValue: 'http://localhost:9000');
-  DeepAnalysisService? deepService;
-  if (providerUrl.isNotEmpty) {
-    deepService = DeepAnalysisService(providerUrl);
-  }
-  runApp(LabApp(deepService: deepService));
+  final service = providerUrl.isNotEmpty
+      ? RemoteAnalysisService(providerUrl) as AnalysisService
+      : LocalAnalysisService() as AnalysisService;
+  runApp(LabApp(service: service));
 }
 
 class LabApp extends StatelessWidget {
-  final DeepAnalysisService? deepService;
-  const LabApp({super.key, this.deepService});
+  final AnalysisService service;
+  const LabApp({super.key, required this.service});
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +26,14 @@ class LabApp extends StatelessWidget {
       title: '写作云 Lab',
       debugShowCheckedModeBanner: false,
       theme: WritingTheme.dark,
-      home: AppShell(deepService: deepService),
+      home: AppShell(service: service),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  final DeepAnalysisService? deepService;
-  const AppShell({super.key, this.deepService});
+  final AnalysisService service;
+  const AppShell({super.key, required this.service});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -44,7 +45,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
-    _writingCubit = WritingReviewCubit(deepService: widget.deepService);
+    _writingCubit = WritingReviewCubit(service: widget.service);
     _writingCubit.loadSample();
   }
 

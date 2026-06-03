@@ -14,7 +14,7 @@ Widget _buildApp(WritingReviewCubit cubit) {
 void main() {
   group('WritingAppBar', () {
     testWidgets('renders logo and buttons', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       await tester.pumpWidget(_buildApp(cubit));
       expect(find.text('✎ 写作云'), findsOneWidget);
       expect(find.text('合成工作台'), findsOneWidget);
@@ -26,16 +26,16 @@ void main() {
     });
 
     testWidgets('review button triggers runReview', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       cubit.textChanged('test content');
       await tester.pumpWidget(_buildApp(cubit));
       await tester.tap(find.text('▶ 评审'));
-      expect(cubit.state.analysis, isNotNull);
+      expect(cubit.state.deepAnalysis, isNotNull);
       cubit.close();
     });
 
     testWidgets('load sample button triggers loadSample', (tester) async {
-      final cubit = WritingReviewCubit();
+      final cubit = WritingReviewCubit.test();
       await tester.pumpWidget(_buildApp(cubit));
       await tester.tap(find.text('加载样本'));
       expect(cubit.state.text, isNotEmpty);

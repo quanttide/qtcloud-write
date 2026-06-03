@@ -11,30 +11,15 @@ class ReflectTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = cubit.state;
-    final situations = state.analysis?.situations ?? [];
 
-    if (situations.isEmpty && state.deepAnalysis == null) {
+    if (state.deepAnalysis == null) {
       return const Center(
-        child: Text(
-          '暂无识别到的可写位置。',
-          style: TextStyle(fontSize: 12, color: WritingColors.textDim),
-        ),
+        child: Text('等待评审...', style: TextStyle(fontSize: 12, color: WritingColors.textDim)),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(10),
-      children: [
-        const Text(
-          '可写位置 — 点击「写在这里」跳转到编辑器对应行',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: WritingColors.textDim, letterSpacing: 0.8),
-        ),
-        const SizedBox(height: 8),
-        ...situations.map((s) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GuideCard.situation(s, onJumpTo: () => cubit.jumpToLine(s.line)),
-            )),
-      ],
+    return const Center(
+      child: Text('可写位置功能需对接 Provider 后启用', style: TextStyle(fontSize: 12, color: WritingColors.textDim)),
     );
   }
 }

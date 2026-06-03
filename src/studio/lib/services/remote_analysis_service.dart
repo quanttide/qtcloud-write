@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/deep_analysis.dart';
+import 'analysis_service.dart';
 
-class DeepAnalysisService {
+class RemoteAnalysisService implements AnalysisService {
   final String baseUrl;
 
-  DeepAnalysisService(this.baseUrl);
+  RemoteAnalysisService(this.baseUrl);
 
+  @override
   Future<DeepReview> submitReview({
     required String title,
     required List<String> paragraphs,
@@ -34,6 +36,6 @@ class DeepAnalysisService {
       detail = body['detail']?.toString() ?? '';
     } catch (_) {}
 
-    throw Exception('深度分析请求失败 ($response.statusCode)${detail.isNotEmpty ? ': $detail' : ''}');
+    throw Exception('分析请求失败 ($response.statusCode)${detail.isNotEmpty ? ': $detail' : ''}');
   }
 }
