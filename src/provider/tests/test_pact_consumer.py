@@ -1,8 +1,3 @@
-"""Consumer-driven pact contract — simulates Flutter making HTTP calls to provider.
-
-Generates pacts/qtcloud_write_provider.json which the provider must satisfy.
-"""
-
 import requests
 from pact import Pact
 
@@ -32,15 +27,18 @@ class TestReviewEndpoint:
             .with_header("Content-Type", "application/json")
             .with_body(
                 {
-                    "article_title": "测试文章",
-                    "author": "test",
-                    "tag": "bad",
-                    "summary": "分析结果摘要",
-                    "paragraphs": [
-                        {"original": "第一段", "analysis": "开篇引入", "tag": "起"},
-                        {"original": "第二段", "analysis": "承接发展", "tag": "承"},
-                    ],
-                    "is_style_available": False,
+                    "article_title": Like("测试文章"),
+                    "author": Like("test"),
+                    "tag": Term(r"good|bad|external", "bad"),
+                    "summary": Like("分析结果摘要"),
+                    "paragraphs": EachLike(
+                        {
+                            "original": Like("第一段"),
+                            "analysis": Like("开篇引入"),
+                            "tag": Term(r"起|承|转|合", "起"),
+                        }
+                    ),
+                    "is_style_available": Term(r"true|false", "false"),
                     "suggestions": [],
                 }
             )
@@ -73,9 +71,29 @@ class TestReflectEndpoint:
             .given("provider is running with valid API key")
             .with_request("POST", "/reflect")
             .with_header("Content-Type", "application/json")
-            .with_body({"text": "他推开门走了出去。"})
+            .with_body({"text": Like("他推开门走了出去。")})
             .will_respond_with(200)
             .with_header("Content-Type", "application/json")
+            .with_body(
+                EachLike(
+                    {
+                        "gap_type": Term(
+                            r"time_jump|dialog_gap|action_gap|perspective_shift|transition",
+                            "action_gap",
+                        ),
+                        "location": Like("开门后"),
+                        "detail": Like("缺少过渡"),
+                        "structure": Like("叙事断裂"),
+                        "psychology": Like("人物反应缺失"),
+                        "reader": Like("期待落空"),
+                        "craft": Term(
+                            r"有意识留白|无意识忽略",
+                            "无意识忽略",
+                        ),
+                        "root_cause": Like("动作描写不完整"),
+                    }
+                )
+            )
         )
 
         with pact.serve(raises=False) as server:
