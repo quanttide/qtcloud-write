@@ -8,5 +8,8 @@ class Settings(BaseSettings):
 
 
 def get_settings() -> Settings:
-    """懒加载，避免启动时就校验"""
-    return Settings()
+    s = Settings()
+    if not s.llm_api_key or s.llm_api_key == "your_deepseek_api_key_here":
+        import os
+        s.llm_api_key = os.environ.get("DEEPSEEK_API_KEY", s.llm_api_key)
+    return s

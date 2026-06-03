@@ -20,17 +20,24 @@ def _get_client() -> LLM:
     return _client
 
 
-def call_llm(prompt: str, system: str = "", temperature: float = 0.3) -> str:
-    """Simple LLM call — for 3R commands (reflect/rewrite)."""
+def _check_api_key():
     settings = get_settings()
     if not settings.llm_api_key:
-        raise ValueError("llm_api_key 未配置")
+        raise ValueError("请配置 LLM_API_KEY 或 DEEPSEEK_API_KEY 环境变量，或在 .env 文件中填入")
+
+
+def call_llm(prompt: str, system: str = "", temperature: float = 0.3) -> str:
+    """Simple LLM call — for 3R commands (reflect/rewrite)."""
+    _check_api_key()
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
-    response = _get_client().complete(messages, temperature=temperature)
-    return response.content
+    try:
+        response = _get_client().complete(messages, temperature=temperature)
+        return response.content
+    except Exception as e:
+        raise RuntimeError(f"LLM 调用失败: {e}") from e
 
 
 def analyze_paragraph(paragraph: str, position: int, total: int, article_tag: str) -> dict:

@@ -19,13 +19,7 @@ echo ""
 echo "--- provider ---"
 cd "$ROOT/src/provider"
 command -v uv &>/dev/null && uv pip install -e . 2>/dev/null || pip install -e .
-if [ ! -f .env ]; then cp .env.example .env; fi
-if grep -q "your_deepseek_api_key_here" .env 2>/dev/null; then
-    echo "  DeepSeek API Key（可留空跳过）"
-    read -r -p "  Key: " k
-    [ -n "$k" ] && sed -i "s/your_deepseek_api_key_here/$k/" .env
-fi
-echo ""
+echo "  已安装。设置 DEEPSEEK_API_KEY 环境变量以启用 AI 分析"
 
 # ── Studio ───────────────────────────────────────────────
 echo "--- studio ---"
