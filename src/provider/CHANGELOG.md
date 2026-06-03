@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0-alpha.4] - 2026-06-03
+
+- `StyleStore` 从内存列表改为 SQLite 持久化（`data/store.db`），重启不丢失
+- 日志按天轮转写入 `data/provider.log`
+- 支持 `DEEPSEEK_API_KEY` 环境变量（兼容 `LLM_API_KEY`）
+- 删除 `.env` 和 `.env.example` 文件依赖
+- 删除 `hvac` 遗留依赖
+- `/review` 端点添加 `try/except` 异常保护
+- `GapAnalysis` 新增 `line` 字段（行号）
+- 新增契约测试：Flutter `fromJson` 验证 + 响应形状验证
+- 22 个测试
+
 ## [0.1.0-alpha.3] - 2026-06-03
 
 - 修复 LLM 集成：缺失 `_build_analyze_prompt` 等 4 个函数补齐，`.chat()` → `.complete()`
