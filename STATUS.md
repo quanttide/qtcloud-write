@@ -2,74 +2,58 @@
 
 ## src/provider — 写作云后端 API
 
-**定位**：AI 驱动叙事分析后端。LLM 分析管线 + 风格积累。
+**定位**：Style 驱动的叙事分析引擎。接受文本 + 风格定义（dimensions + excerpts），按维度输出对齐分数和偏差。
 
 **现状**：
-- `/review` `/reflect` `/rewrite` `/cycle` 四个端点可用，均有 502 error handling
-- `call_llm` / `analyze_paragraph` / `compare_with_style` 三套 LLM 调用路径完整
-- `StyleStore` SQLite 持久化（`src/provider/data/store.db`），重启不丢失
-- `DEEPSEEK_API_KEY` 和 `LLM_API_KEY` 两种环境变量均支持
-- 日志按天轮转写入 `src/provider/data/provider.log`
-- Dockerfile + Terraform 就绪
-- 18 个测试
+- `POST /review` — 评估文本与风格的匹配度，每个维度输出 alignment_score + deviations
+- `POST /analyze` — 深度分析单个维度的偏差，输出 original/expected pattern 对比 + fix_strategies
+- `POST /inspire` — 生成多条启发式修改建议，支持 variety / target_dimensions 参数
+- Style 模型：`{name, title, description, dimensions[], excerpts[]}`
+- Sample 模型已定义（独立，暂未接入）
+- 6 单元测试（`tests/`，mock call_llm）+ 14 集成测试（`integrated_tests/`，真实 DeepSeek API）
+- 集成测试验证业务逻辑：匹配风格分高、不匹配分低、中性文本低分、交叉验证
+- SQLite 持久化（`data/store.db`）+ 日志轮转（`data/provider.log`）
+- 支持 `DEEPSEEK_API_KEY` / `LLM_API_KEY` 环境变量
+- 22 测试（6 单元 + 14 集成 + 2 验收）
 
 **未完成**：
-- `/review` 端点返回的 `summary` 是三段硬编码文本（"好文章，叙事结构清晰。" / "风格还在积累中…" / "根本问题不是…"），不随文章内容变化，与 LLM 分析结果无关
-- 集成测试用 `autouse=True` mock 了整个 LLM 调用链，仅验证 HTTP 路由和数据格式，不验证 AI 分析质量
-- `StyleStore` 无数据迁移/备份机制
+- `call_llm()` 裸调 LLM，无重试 / 超时 / token 追踪
+- `style.samples` 字段暂未接入 prompt
+- 集成测试跳过仅检查 env var，不区分"没 Key"和"Key 错误"
 
 ## src/studio — 写作评审 Flutter 前端
 
 **定位**：写作评审桌面客户端（Linux）。
 
 **现状**：
-- 3R 工作台：三栏布局、编辑器、Markdown 预览、空隙标记
-- 评审走统一 `AnalysisService` 接口，优先调后端 LLM，不可用时回退本地正则
-- `RemoteAnalysisService`（HTTP）+ `LocalAnalysisService`（正则包装），构造时必填，不可空
-- `runReview()` / `loadSample()` 均通过 `AnalysisService`，不再分两条路径
-- 深度分析按钮已合并到"评审"，UI 只有一个入口
-- 19 个组件、8 个模型、6 个服务、124 单元测试 + 6 集成测试
+- 3R 工作台：三栏布局、编辑器、Markdown 预览、评审面板
+- 评审走统一 `AnalysisService` 接口，调 Provider API
+- `RemoteAnalysisService`（HTTP）+ `LocalAnalysisService`（无分析，仅展示占位）
+- 125 单元测试 + 6 集成测试
 
 **未完成**：
-- 样本文本仍然硬编码在 `writing_review_cubit.dart` 的 `_sampleText` 中
-- Reflect/Rewrite 标签页在后端返回数据前仅展示占位文字，无离线回退内容
-- `loadSample()` 在 Provider 不可用时走 `LocalAnalysisService`，但样本文本本身还是硬编码
+- 所有评审结果显示的是占位文字，未真实对接 Provider 返回的 dimension_alignments
+- 样本文本硬编码在 `writing_review_cubit.dart` 中
+- Reflect/Inspire 标签页无 UI（仅占位文字）
 
 ## src/cli — 写作工作流引擎 (Rust)
 
-**定位**：将写作流程定义为可配置的状态机转换规则。
+**定位**：待定。当前为 demo 状态。
 
 **现状**：
 - CLI demo 可运行标准写作流程
-- `contract.yaml` 定义 stage/expand 两层配置
-- Lean 4 形式化模型（`WriteCategory.lean`）作为语义锚点
-
-**未完成**：
-- 与 provider / studio 尚未集成
-- 仅 demo 级别可用，未产品化
+- 与 provider / studio 未集成
 
 ## 已知架构问题
 
-### 测试全绿 ≠ AI 可工作
+### LLM 调用裸奔
 
-`conftest.py` 用 `autouse=True` mock 了全部 LLM 调用。18 个测试全过只说明 HTTP 路由和数据格式正确，不证明 LLM 能分析出有意义的结论。验收测试应使用真实 LLM（固定 prompt），mock 只该存活一个 PR 周期。
+`call_llm()` 直接调 `LLM.complete()`，无重试、无超时、无 token 追踪。502 直接抛异常。60s 以上请求可能挂死。参见 `docs/roadmap/harness.md` 的改造方向。
 
-### 后端 summary 与 LLM 无关
+### 集成测试无法在 CI 运行
 
-`/review` 的 summary 是三段 if/else 硬编码，即使 LLM 正常工作，这个结论也和 LLM 分析结果无关。LLM 返回的 `analysis` 字段仅出现在段落级别，不在文章级别呈现。
+14 个集成测试需要真实 DeepSeek API Key。当前跳过策略只检查 env var，无法在 CI 中安全执行。需要在 CI 中维护一个测试专用 Key 或提供 mock 模式。
 
-### 样本仅存在于前端
+### Flutter 端未对接新 API
 
-测试样本（good/bad 文章）只被 Python 测试使用。Flutter 前端没有从 `tests/fixtures/` 加载样本的入口，也没有从后端获取样本的 API。前后端各有自己的样本数据。
-
-### 3R 三 Tab 是后端 API 粒度的直接镜像
-
-三个 Tab（review / reflect / rewrite）对应后端的三个独立端点，但用户不关心管线阶段。`/cycle` 端点一次返回完整一轮结果，前端却放着不用，自己拆成三个 Tab 各自调用独立端点。应合并为一个结果面板，一次 `/cycle` 调用。
-
-### 静默回退让 AI 失败对用户不可见
-
-`runReview()` 在 Provider 不可用时用 `try/catch` 静默降级到正则分析，`isUsingProvider` 字段存在但不展示。用户看到"评审结果"，无法区分是 AI 分析还是正则规则。应在 UI 明确标注"AI 分析"或"本地分析（离线）"。
-
-### 代码默认行为是"不让 AI 介入"
-
-每一处"AI 不行就算了"的设计累积起来，暗示 AI 是可有可无的附加功能。`loadSample()` 默认不走 Provider，`runReview()` 静默回退，`_deepService` 曾经可空——系统默认不尝试 AI。修正方向：默认走 AI，失败要醒目，而不是"AI 不行就用正则糊弄"。
+3R 标签页显示占位文字而非真实的 dimension_alignments。评审结果不展示。这是目前最大的产品缺口——后端能跑了，前端看不到。
