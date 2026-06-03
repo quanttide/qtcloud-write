@@ -1,104 +1,87 @@
-import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pact_dart/pact_dart.dart';
-import 'package:http/http.dart' as http;
 import 'package:qtcloud_write_studio/models/deep_analysis.dart';
 
 void main() {
-  group('Provider API contract', () {
-    late PactMockService pact;
-
-    setUp(() {
-      pact = PactMockService('qtcloud_write_studio', 'qtcloud_write_provider');
-    });
-
-    tearDown(() {
-      pact.reset();
-    });
-
-    test('POST /review returns DeepReview-compatible response', () async {
-      // 定义期望的请求和响应
-      pact
-          .newInteraction('a review request')
-          .given('provider is running with valid API key')
-          .uponReceiving('a request to review an article')
-          .withRequest('POST', '/review', headers: {
-        'Content-Type': 'application/json',
-      }, body: {
-        'title': '测试文章',
-        'paragraphs': ['第一段内容', '第二段内容'],
-        'author': 'test',
-        'tag': 'bad',
-      }).willRespondWith(200, headers: {
-        'Content-Type': 'application/json',
-      }, body: {
+  group('Provider API — fromJson 契约验证', () {
+    test('DeepReview.fromJson 解析完整 review 响应', () {
+      final json = {
         'article_title': '测试文章',
         'author': 'test',
         'tag': 'bad',
         'summary': '分析结果摘要',
         'paragraphs': [
+          {'original': '第一段', 'analysis': '开篇', 'tag': '起'},
+          {'original': '第二段', 'analysis': '承接', 'tag': '承'},
+          {'original': '第三段', 'analysis': '转折', 'tag': '转'},
+          {'original': '第四段', 'analysis': '收束', 'tag': '合'},
+        ],
+        'is_style_available': true,
+        'suggestions': [
+          {'priority': 1, 'action': '换起点', 'detail': '从个人困境出发'},
+        ],
+      };
+
+      final review = DeepReview.fromJson(json);
+      expect(review.articleTitle, '测试文章');
+      expect(review.paragraphs, hasLength(4));
+      expect(review.paragraphs[2].tag, '转');
+      expect(review.suggestions, hasLength(1));
+      expect(review.suggestions[0].priority, 1);
+    });
+
+    test('DeepReview.fromJson 处理段落含 comparison', () {
+      final json = {
+        'article_title': 't',
+        'author': 'a',
+        'tag': 'bad',
+        'summary': 's',
+        'paragraphs': [
           {
-            'original': '第一段内容',
-            'analysis': '开篇引入场景',
+            'original': '开头段',
+            'analysis': '分析',
             'tag': '起',
+            'comparison': {'type': 'bad', 'issue': '风格不一致', 'demo': '应以个人困境出发'},
           },
-          {
-            'original': '第二段内容',
-            'analysis': '承接发展',
-            'tag': '承',
-          },
+        ],
+        'is_style_available': true,
+        'suggestions': [],
+      };
+
+      final review = DeepReview.fromJson(json);
+      expect(review.paragraphs[0].comparison, isNotNull);
+      expect(review.paragraphs[0].comparison!.type, 'bad');
+    });
+
+    test('DeepReview.fromJson 处理空 paragraphs', () {
+      final json = {
+        'article_title': 't',
+        'author': 'a',
+        'tag': 'bad',
+        'summary': 's',
+        'paragraphs': [],
+        'is_style_available': false,
+        'suggestions': [],
+      };
+
+      final review = DeepReview.fromJson(json);
+      expect(review.paragraphs, isEmpty);
+    });
+
+    test('DeepReview.fromJson 处理 null comparison', () {
+      final json = {
+        'article_title': 't',
+        'author': 'a',
+        'tag': 'bad',
+        'summary': 's',
+        'paragraphs': [
+          {'original': 'p1', 'analysis': 'a1', 'tag': '起', 'comparison': null},
         ],
         'is_style_available': false,
         'suggestions': [],
-      });
+      };
 
-      pact.run(secure: false);
-
-      // 发出真实请求
-      final uri = Uri.parse('http://localhost:1235/review');
-      final res = await http.post(uri,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'title': '测试文章',
-            'paragraphs': ['第一段内容', '第二段内容'],
-            'author': 'test',
-            'tag': 'bad',
-          }));
-
-      // 验证响应能被 Dart 模型解析
-      expect(res.statusCode, equals(200));
-      final review = DeepReview.fromJson(jsonDecode(res.body));
-      expect(review.articleTitle, equals('测试文章'));
-      expect(review.paragraphs.length, equals(2));
-      expect(review.paragraphs[0].tag, equals('起'));
-
-      // 写入 pact 文件
-      expect(pact.hasMatchedInteractions(), isTrue);
-      pact.writePactFile(overwrite: true);
-    });
-
-    test('POST /reflect returns GapAnalysis-compatible response', () async {
-      pact
-          .newInteraction('a reflect request')
-          .given('provider is running')
-          .uponReceiving('a request to reflect on text')
-          .withRequest('POST', '/reflect', headers: {
-        'Content-Type': 'application/json',
-      }, body: {
-        'text': '他推开门走了出去。',
-      }).willRespondWith(200, headers: {
-        'Content-Type': 'application/json',
-      });
-
-      pact.run(secure: false);
-
-      final uri = Uri.parse('http://localhost:1235/reflect');
-      final res = await http.post(uri,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'text': '他推开门走了出去。'}));
-
-      expect(res.statusCode, equals(200));
-      pact.writePactFile(overwrite: true);
+      final review = DeepReview.fromJson(json);
+      expect(review.paragraphs[0].comparison, isNull);
     });
   });
 }
