@@ -1,18 +1,183 @@
 # STATUS
 
-## examples/ — 各子项目概括
+## examples/ — 概念验证与原型
 
-| 子目录 | 思路概括 | 技术栈 |
-|--------|---------|--------|
-| **p01-writing-poc** | 3R 方法论（Review → Reflect → Rewrite）的自动化概念验证。纯 CLI 工具，实现文本空隙检测、风格评分、自动生成写作提示和交互式 3R 会话循环。 | Python 3，仅标准库 |
-| **p02-writing-html** | 3R 写作工作台桌面 UI 的单文件 HTML 原型集。分别验证三栏自适应布局、Markdown 编辑器、评审报告卡片、空隙标记+情境引导面板、改写看板，最终整合为合成工作台。 | 纯 HTML5/CSS3/ES6，零外部依赖，暗色主题 |
-| **prototype** | 早于 p01/p02 的 UI 探索原型。围绕"起承转合"叙事框架展示好/坏文章评审的并排布局，为后续 3R 框架提供设计参考。 | 纯 HTML/CSS，浅色主题，静态页面 |
-| **write-agent-studio** | 文档智能体 Flutter 桌面应用。实现人与 AI 围绕 Markdown 文档的协作编辑，三源状态模型（文件/编辑器/AI），内置 AI 对话面板，自适应宽/窄屏布局。 | Dart/Flutter 3.x，flutter_bloc，http 包，Material 3，OpenCode AI 后端 |
+### p01-writing-poc — 3R 写作引擎 PoC
 
-## src/ — 各子项目概括
+**定位**：3R 方法论（Review → Reflect → Rewrite）的自动化 CLI 概念验证，独立验证核心写作引擎的可行性。
 
-| 子目录 | 思路概括 | 技术栈 |
-|--------|---------|--------|
-| **cli** | 基于范畴论的写作工作流引擎。将写作过程建模为自由范畴（free quiver），通过 Lean 4 形式化模型 → contract.yaml → 有界展开引擎 → 可执行 FSM 的架构管线，实现阶段转换的形式化验证。 | Rust（pr4xis FSM 引擎，serde/serde_yaml），Lean 4 形式化模型，Kani 符号验证 |
-| **provider** | 写作云后端 API 服务。接收文章投稿，通过 LLM（DeepSeek）进行叙事结构分析（起承转合标记），积累优秀文章语料库进行风格对比，返回结构化评审报告。Docker 部署。 | Python 3.11+，FastAPI，pydantic-settings，quanttide-agent（DeepSeek），uv 打包 |
-| **studio** | 写作评审 Flutter 前端客户端。提供文章提交表单，调用 provider 的 /review 接口获取分析结果，以颜色编码展示段落叙事标签、分析和风格对比，列出改进建议。多平台支持。 | Dart/Flutter，Material 3，http 包，支持 macOS/iOS/Linux/Web |
+**思路**：
+- 将 Zed + AI 手动 3R 循环自动化为可重复的 CLI 工具
+- **ReviewEngine**：六类空隙检测（时间跳跃、对话间隙、动作空隙、视角切换、过渡压缩），以及六项风格评分（对话-动作转化率、身份标签、情绪标签、状态句结尾、对称叙事、半秒钟密度、闪回处理）
+- **ReflectionEngine**：根据检测到的空隙生成自然语言写作提示
+- **RewriteTracker**：比较新旧版本，显示字数变化和风格得分变化
+- **ThreeRSession**：交互式 CLI 向导，迭代运行 3R 循环
+
+**关键设计决策**：纯标准库，零外部依赖，确保概念验证阶段零摩擦运行。
+
+**状态**：已实现（845 行 Python），可用作后续 UI 集成的后端引擎参考。
+
+---
+
+### p02-writing-html — 3R 桌面 UI HTML 原型集
+
+**定位**：在投入 Flutter 开发前，用单文件 HTML 逐一验证 3R 工作台的桌面交互体验。
+
+**思路**：
+- **拆解验证序列**：每个 HTML 文件独立验证一个方面，最后整合
+  - `layout.html` — 三栏 flex 布局 + 可拖拽分隔条（左：底稿列表+3R 记录 / 中：编辑器 / 右：情境+仪表盘）
+  - `editor.html` — Markdown 编辑 + 块级预览切换 + 字数统计
+  - `review.html` — 评审报告卡片：空隙列表（颜色编码圆点+描述）+ 风格检查进度条 + 综合得分 + 优先改进建议
+  - `reflect.html` — 空隙标记（编辑器行号旁的彩色圆点）+ 右侧可点击的情境引导卡片
+  - `rewrite.html` — 改写看板：评分变化展示、循环时间线、改进项勾选列表
+  - `index.html` — 合成工作台：带空隙标记的编辑器 + 右侧标签页面板（评审/情境/改写）+ 状态栏
+- **设计系统**：通过 CSS 自定义属性定义完整的设计 token（`--bg` `--surface` `--accent` 等），Flutter 版可直接映射为 ThemeData
+
+**关键设计决策**：零外部依赖，内联 Markdown 渲染（手写 `renderMarkdown()` 函数），暗色主题。
+
+**状态**：各组件已实现并验证通过。设计 token 已确定，可作为 Flutter 主题的精确规范。
+
+---
+
+### prototype — 早期评审 UI 探索
+
+**定位**：早于 p01/p02 的 UI 思路形成探索，围绕"起承转合"叙事框架。
+
+**思路**：
+- 两篇静态 HTML 页面，展示好/坏文章评审的并排布局（原文 | 分析）
+- `review_bad.html` — 分析一篇关于市场营销活动的文章，指出"起点不对、数据不准、结论不匹配、收束错位"
+- `review_good.html` — 分析一篇关于游戏设计启发产品设计的文章，展示"好"叙事的逻辑结构
+- 使用颜色编码标签（`tag-qi` `tag-cheng` `tag-zhuan` `tag-he`）标记段落叙事角色
+
+**关键设计决策**：浅色主题，静态无交互。尚未迁移到 3R 框架。
+
+**状态**：存档作为设计参考和灵感来源。其"起承转合"叙事标注思路被 src/provider 和 src/studio 继承。
+
+---
+
+### write-agent-studio — 文档智能体 Flutter 桌面应用
+
+**定位**：实现"人 + AI 围绕一份 Markdown 文档"的协作编辑，是 p01 写作引擎的更通用演进。
+
+**思路**：
+- **三源状态模型**：文档只有唯一真实源，但可通过三个途径更新
+  - `fromFile()` — 外部编辑器（VSCode/Typora）修改后的文件同步
+  - `fromEditor()` — 应用内内置编辑器修改
+  - `fromAgent()` — AI 通过 `[INTENT_UPDATE]` 结构化标记提出的文档更新
+- **抽象 AI 服务层**：`AiChatService` 接口 + `OpenCodeChatService` 实现（连接本地 OpenCode 服务 `127.0.0.1:4096`），可替换为 OpenAI/其他后端
+- **自适应 UI**：`DocumentAgentLayout` 根据窗口宽度自动切换宽屏（左右并排）和窄屏（上下堆叠）模式
+- **清晰边界**（来自 BRD）：
+  - 适合：需求分析、研究笔记、技术设计、写作、会议纪要
+  - 不适合：实时多人协同（无 OT/CRDT）、强结构化数据、审批工作流、非文本协作
+
+**架构演进**：从被动响应（用户发消息 → AI 回复 → 可能更新文档）预留了向主动智能体扩展的接口（`AgentBrain` 周期性观察文档并主动建议）。
+
+**状态**：核心架构完整实现。代码组织为可复用 Flutter 包结构（`cubits/` `services/` `ui/`）。OS 平台配置完备（Android/iOS/Linux/macOS/Web）。
+
+---
+
+## src/ — 核心产品实现
+
+### cli — 叙事工程工作流引擎
+
+**定位**：基于范畴论的写作工作流引擎，为写作过程提供形式化验证基础。产品代码中最具理论深度的一层。
+
+**架构管线**：`Lean 4 模型 → contract.yaml → 有界展开引擎 → 可执行 FSM`
+
+- **Lean 4 模型**（`WriteCategory.lean`）：用自由范畴（free quiver）形式化定义写作过程
+  - 四个对象：`material` `outline` `firstDraft` `finalDraft`
+  - 阶段态射：`organize` `writeFromOutline` `finalize`
+  - 直接路径（跳跃）：`draftFromMaterial` `polishFromOutline` `publishFromMaterial`
+  - 循环自态射：`review` `reflect` `rewrite`（firstDraft 上的端射，可任意复合形成无限修改路径）
+  - 高阶结构：outline 被建模为**纤维范畴**的基座，通过 Grothendieck 构造支持多粒度叙事结构（beat/scene/act/arc）的递归展开
+  - 函子解释：素材 → 提纲 = 自由函子（余代数视角的"叙事生成"），提纲 → 初稿 = 解释函子（代数视角的"文本生成"）
+
+- **两层分离**：
+  - `stages`（平台定义，不可变）— 源自 Lean 模型，保证阶段和态射的完备性
+  - `expand`（用户配置，有界）— 用户自由设定 `max`（改写次数上限）、`min_cycle`（定稿守卫）
+
+- **Rust 引擎**（`pr4xis` FSM 框架）：将展开后的模型转化为可执行状态机，在操作系统中守卫合法转换
+  - `MaxGuard` / `MinCycleGuard` — 基于计数器的守卫条件
+  - Kani 符号验证 — 证明 `rewrite` 递增 `cycle`、`review` 递增 `consecutive_review`、`reflect` 重置计数
+
+**关键设计决策**：Lean 代码不参与运行时——它唯一的作用是作为人与 LLM 之间、LLM 与校验工具之间的**形式化语义锚点**。
+
+**状态**：核心管线已打通（Lean → YAML → Rust FSM），Kani 验证已通过。CLI demo 可运行标准写作流程。
+
+---
+
+### provider — 写作云后端 API 服务
+
+**定位**：产品化的 AI 驱动叙事分析后端。从 examples/p01 的方法论验证演进为可部署的 Web 服务。
+
+**思路**：
+- **单一端点**：`POST /review` — 接收文章，返回结构化叙事分析
+- **两种标签**：
+  - `tag: "good"` — 文章被存入 `StyleStore`，作为风格对比的语料积累
+  - `tag: "bad"` / `"external"` — 触发完整分析流程：LLM 分析每段叙事功能 → 风格对比 → 生成改进建议
+- **LLM 分析管线**：
+  1. `analyze_paragraph()` — 对每段调用 DeepSeek，判断其"起承转合"叙事角色
+  2. `compare_with_style()` — 若有风格语料，对比段落与"好"文章的差异
+  3. 综合生成优先级排序的修改建议（换起点、补锚点、换收束）
+- **StyleStore**：内存中的好文章语料库，随每次 good 提交自动累积
+
+**关键设计决策**：
+- 核心分析逻辑委托给 LLM，避免硬编码规则，保持灵活性
+- Pydantic 模型定义清晰的 API 契约（`ArticleIn` → `ReviewOut`）
+- 通过 `.env` 配置 API Key，支持多环境部署
+
+**技术栈**：Python 3.11+ / FastAPI / quanttide-agent（DeepSeek）/ pydantic-settings / uv / Docker
+
+**状态**：API 可运行，集成测试覆盖好/坏文章评审流程。Dockerfile 就绪，暴露 9000 端口。
+
+---
+
+### studio — 写作评审 Flutter 前端
+
+**定位**：写作评审服务的桌面/Web 前端客户端。与 provider 构成完整的前后端闭环。
+
+**思路**：
+- **提交表单**：标题、作者、标签（good/bad）、正文（每行一段）
+- **评审结果展示**：
+  - 总结摘要：一句话概括文章质量
+  - 修改建议：优先级排序的改进项列表
+  - 段落详情：每段显示"起承转合"颜色编码标签（绿/蓝/橙/紫）+ LLM 分析文本 + 风格对比提示（红底"坏" + 蓝底"好"对比）
+- **API 注入**：通过 `--dart-define=API_URL=...` 在编译时注入后端地址，支持多环境
+
+**关键设计决策**：Material 3 设计体系，保持与 p02 设计 token 的一致性。API 服务层（`ApiService`）和模型层（`Review` 数据类）清晰分离。
+
+**状态**：基本功能完整。macOS / iOS / Linux 平台配置就绪。
+
+---
+
+## 架构关系总览
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    Theory / Formal                        │
+│  src/cli (Rust + Lean 4) — 范畴论工作流引擎              │
+│  提供形式化验证基础，不参与运行时                         │
+└──────────────────────┬───────────────────────────────────┘
+                       │ contract.yaml 定义合法转换
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│                      Backend                             │
+│  src/provider (Python/FastAPI) — 写作云 API 服务         │
+│  叙事分析 / 风格对比 / DeepSeek LLM                     │
+└──────────┬───────────────────────────────────────────────┘
+           │ POST /review
+           ▼
+┌──────────────────────────────────────────────────────────┐
+│                      Frontend                            │
+│  src/studio (Dart/Flutter) — 写作评审客户端              │
+│  表单提交 / 结果可视化                                   │
+└──────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────┐
+│                  Examples / Prototypes                   │
+│  p01: 3R 引擎 CLI PoC       (方法论验证)                │
+│  p02: 3R 桌面 UI HTML 原型   (交互验证)                 │
+│  prototype: 早期起承转合 UI  (设计参考)                  │
+│  write-agent-studio: 文档智能体 (通用演进)               │
+└──────────────────────────────────────────────────────────┘
+```
