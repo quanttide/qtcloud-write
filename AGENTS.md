@@ -4,10 +4,12 @@
 
 | 文档 | 认知角色 | 内容概要 |
 |------|----------|----------|
-| [docs/index.md](docs/index.md) | 架构 | 场景—困境—救援—新生 |
-| [docs/brd/index.md](docs/brd/index.md) | 业务 | 为什么做、业务场景、问题分析 |
-| [docs/prd/index.md](docs/prd/index.md) | 需求 | 核心用户故事、验收标准 |
-| [docs/pmd/index.md](docs/pmd/index.md) | 管理 | 当前阶段、待验证方向 |
+| [README.md](README.md) | 用户 | 快速开始、命令参考 |
+| [CHANGELOG.md](CHANGELOG.md) | 用户 | 版本变更记录 |
+| [STATUS.md](STATUS.md) | 用户 | 项目总览与子项目概括 |
+| [AGENTS.md](AGENTS.md) | 内部 | 开发心智模型与执行约束 |
+
+> 设计文档（BRD/PRD/PMD/QA/IXD/ADD）已迁移至 [docs/vision/platform](https://github.com/quanttide/quanttide-vision-of-narrative-engineering)。
 
 ## 执行约束
 
