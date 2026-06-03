@@ -11,14 +11,14 @@ class RemoteAnalysisService implements AnalysisService {
   @override
   Future<ReviewResponse> submitReview({
     required String text,
-    required List<Map<String, dynamic>> criteria,
+    required Map<String, dynamic> style,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/review'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'text': text,
-        'criteria': criteria,
+        'style': style,
       }),
     );
 

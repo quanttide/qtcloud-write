@@ -3,22 +3,33 @@ from typing import Optional
 
 MAX_INPUT_LENGTH = 16000
 
-# ── Criterion ──────────────────────────────────────────
+# ── StyleSample ─────────────────────────────────────────
 
-class Criterion(BaseModel):
-    id: str
-    type: str  # "positive_example" | "negative_example" | "constraint"
-    name: str = ""
-    content: str = ""    # for positive/negative_example
-    description: str = ""  # for constraint
-    weight: float = 1.0
+class Dimension(BaseModel):
+    title: str
+    description: str = ""
+    confidence: float = 0.0
+    clues: list[str] = Field(default_factory=list)
+
+
+class StyleExample(BaseModel):
+    paragraph: str = ""
+    dimension: str = ""
+    note: str = ""
+
+
+class StyleSample(BaseModel):
+    title: str
+    description: str = ""
+    dimensions: list[Dimension] = Field(default_factory=list)
+    examples: list[StyleExample] = Field(default_factory=list)
 
 
 # ── Review ─────────────────────────────────────────────
 
 class ReviewRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
-    criteria: list[Criterion] = Field(default_factory=list)
+    style: StyleSample
 
 
 class Deviation(BaseModel):
@@ -27,14 +38,14 @@ class Deviation(BaseModel):
     suggested_alignment: str = ""
 
 
-class CriterionAnalysis(BaseModel):
-    criterion_id: str
+class DimensionAlignment(BaseModel):
+    dimension_title: str
     alignment_score: float = 0.0
     deviations: list[Deviation] = Field(default_factory=list)
 
 
 class ReviewResponse(BaseModel):
-    criteria_analysis: list[CriterionAnalysis] = Field(default_factory=list)
+    dimension_alignments: list[DimensionAlignment] = Field(default_factory=list)
     overall_summary: str = ""
 
 
@@ -42,9 +53,9 @@ class ReviewResponse(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
-    criterion: Criterion
+    style: StyleSample
+    dimension_title: str = ""
     deviation_description: str = ""
-    focus: str = "root_cause"  # "root_cause" | "pattern_contrast" | "fix_suggestions"
 
 
 class FixStrategy(BaseModel):
@@ -53,8 +64,7 @@ class FixStrategy(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
-    criterion_id: str = ""
-    analysis_type: str = ""
+    dimension_title: str = ""
     original_pattern: dict = Field(default_factory=dict)
     expected_pattern: dict = Field(default_factory=dict)
     gap_analysis: dict = Field(default_factory=dict)
@@ -64,8 +74,13 @@ class AnalyzeResponse(BaseModel):
 
 # ── Inspire ────────────────────────────────────────────
 
-class InspirationImpact(BaseModel):
-    alignment_impact: dict[str, float] = Field(default_factory=dict)
+class InspireRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
+    style: StyleSample
+    target_dimensions: list[str] = Field(default_factory=list)
+    inspiration_count: int = 3
+    variety: str = "balanced"
+    temperature: float = 0.8
 
 
 class Inspiration(BaseModel):
@@ -74,17 +89,8 @@ class Inspiration(BaseModel):
     description: str = ""
     suggested_snippet: str = ""
     applies_to: str = ""
-    changes_summary: str = ""
+    target_dimension: str = ""
     alignment_impact: dict[str, float] = Field(default_factory=dict)
-
-
-class InspireRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=MAX_INPUT_LENGTH)
-    criteria: list[Criterion] = Field(default_factory=list)
-    inspiration_count: int = 3
-    variety: str = "balanced"  # "conservative" | "balanced" | "creative"
-    focus_areas: list[str] = Field(default_factory=list)
-    temperature: float = 0.8
 
 
 class InspireResponse(BaseModel):

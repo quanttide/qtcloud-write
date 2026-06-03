@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.models import (
-    Criterion, ReviewRequest, ReviewResponse, CriterionAnalysis, Deviation,
+    StyleSample, ReviewRequest, ReviewResponse, DimensionAlignment, Deviation,
     AnalyzeRequest, AnalyzeResponse, FixStrategy,
     InspireRequest, InspireResponse, Inspiration,
 )
@@ -27,32 +27,35 @@ app = FastAPI(title="写作云 Provider", version="0.2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
-def _format_criteria(criteria: list[Criterion]) -> str:
-    parts = []
-    for c in criteria:
-        if c.type == "positive_example":
-            parts.append(f"正面范例「{c.name or c.id}」：{c.content}")
-        elif c.type == "negative_example":
-            parts.append(f"反面范例「{c.name or c.id}」：{c.content}")
-        elif c.type == "constraint":
-            parts.append(f"约束「{c.name or c.id}」：{c.description or c.content}")
-    return "\n\n".join(parts)
+def _dimensions_text(style: StyleSample) -> str:
+    lines = []
+    for d in style.dimensions:
+        lines.append(f"## {d.title}")
+        lines.append(d.description)
+        lines.append(f"  置信度: {d.confidence}")
+        if d.clues:
+            lines.append("  线索:")
+            for c in d.clues:
+                lines.append(f"    - {c}")
+    return "\n".join(lines)
 
 
-REVIEW_PROMPT = """你是一个文本对比助手。用户提供一篇文本（TEXT）和若干准则（CRITERIA）。
+def _examples_text(style: StyleSample) -> str:
+    lines = []
+    for ex in style.examples:
+        lines.append(f"[{ex.dimension}] {ex.paragraph}")
+        if ex.note:
+            lines.append(f"  注: {ex.note}")
+    return "\n".join(lines)
 
-每个准则可能是正面范例（positive_example）、反面范例（negative_example）或约束（constraint）。
 
-对于每个准则：
-- positive_example：评估 TEXT 在多大程度上体现了该范例的风格/特征。给出 0-1 分数（1=完全一致），指出具体偏差位置和建议。
-- negative_example：评估 TEXT 在多大程度上避免了该范例的特征。分数越高越好（1=完全不相似）。指出哪里仍然像反面范例。
-- constraint：评估 TEXT 是否满足约束，若不满足指出位置和建议。
+REVIEW_PROMPT = """你是一个风格分析助手。用户提供一篇文本和一个风格模型（含多个维度），请评估文本在每一个维度上与风格的对齐程度。
 
 输出 JSON，格式如下，不要额外文字：
 {{
-  "criteria_analysis": [
+  "dimension_alignments": [
     {{
-      "criterion_id": "c1",
+      "dimension_title": "情感表达",
       "alignment_score": 0.35,
       "deviations": [
         {{
@@ -63,121 +66,112 @@ REVIEW_PROMPT = """你是一个文本对比助手。用户提供一篇文本（T
       ]
     }}
   ],
-  "overall_summary": "一句话总结"
+  "overall_summary": "一句话总结整体对齐情况"
 }}
 
-TEXT：
-{text}
+风格模型：
+标题：{style_title}
+{style_desc}
 
-CRITERIA：
-{criteria}"""
+维度：
+{dimensions}
+
+风格范例：
+{examples}
+
+待评估文本：
+{text}"""
 
 
-ANALYZE_PROMPT = """你是一个写作诊断专家。用户提供一个文本片段和一个准则，请进行深度分析。
+ANALYZE_PROMPT = """你是一个写作诊断专家。用户提供文本、风格模型，以及需要深度分析的具体维度。请分析该维度上文本与风格的差距。
 
 输出 JSON，格式如下，不要额外文字：
 {{
-  "analysis_type": "pattern_contrast",
   "original_pattern": {{
-    "description": "当前文本的模式描述",
-    "example_from_text": "文本中的具体例子"
+    "description": "文本当前的模式",
+    "example": "文本中的具体例子"
   }},
   "expected_pattern": {{
-    "description": "准则期望的模式描述",
-    "example_from_criterion": "准则中的示范"
+    "description": "风格期望的模式",
+    "example": "风格范例中的示范"
   }},
   "gap_analysis": {{
-    "root_cause": "根本原因分析",
-    "psychological_impact": "对读者的心理影响",
-    "structural_role": "在文中的结构作用"
+    "root_cause": "根本原因",
+    "impact": "对读者的影响"
   }},
   "fix_strategies": [
-    {{
-      "strategy": "策略名称",
-      "example": "具体的修改示例"
-    }}
+    {{"strategy": "策略名称", "example": "具体示例"}}
   ],
-  "suggested_next_steps": "下一步建议"
+  "suggested_next_steps": "建议"
 }}
 
-偏差描述：{deviation_desc}
+待分析维度：{dim_title}
+维度描述：{dim_desc}
 
-准则：
-{name}（{type}）
-{content_desc}
+风格范例：
+{examples}
 
 文本：
 {text}"""
 
 
-INSPIRE_PROMPT = """你是一个写作创意助手。用户提供一篇原文和若干准则，请生成多个不同的启发式修改建议。
+INSPIRE_PROMPT = """你是一个写作创意助手。用户提供原文和一个风格模型，请生成多个启发式修改建议，使原文更好地对齐该风格的特定维度。
 
-每个建议应是一个具体的改写片段，不是全文替换。用户会自行选择、组合或修改这些建议。
+每个建议应是一个具体的改写片段，不是全文替换。
 
 多样性要求：{variety_text}
-关注领域：{focus_text}
 
 输出 JSON，格式如下，不要额外文字：
 {{
   "inspirations": [
     {{
       "id": "insp_001",
-      "title": "简短标题",
+      "title": "建议标题",
       "description": "建议说明",
       "suggested_snippet": "具体的改写片段",
-      "applies_to": "适用于原文的位置说明",
-      "changes_summary": "修改内容摘要",
-      "alignment_impact": {{
-        "c1": 0.85
-      }}
+      "applies_to": "适用于原文的位置",
+      "target_dimension": "对齐的目标维度",
+      "alignment_impact": {{"维度名": 0.85}}
     }}
   ]
 }}
 
+目标维度：{target_dims}
+
+风格模型：
+{style_desc}
+
+风格范例：
+{examples}
+
 原文：
-{text}
+{text}"""
 
-准则：
-{criteria}"""
-
-
-# ── 辅助 ────────────────────────────────────────────────
-
-def _criteria_text(criteria: list[Criterion]) -> str:
-    lines = []
-    for c in criteria:
-        if c.type == "positive_example":
-            lines.append(f"  - {c.id} (正面范例, weight={c.weight}): {c.content}")
-        elif c.type == "negative_example":
-            lines.append(f"  - {c.id} (反面范例, weight={c.weight}): 避免类似 {c.content}")
-        elif c.type == "constraint":
-            lines.append(f"  - {c.id} (约束, weight={c.weight}): {c.description or c.content}")
-    return "\n".join(lines)
-
-
-# ── 端点 ────────────────────────────────────────────────
 
 @app.post("/review", response_model=ReviewResponse)
 def review(body: ReviewRequest):
     try:
         prompt = REVIEW_PROMPT.format(
+            style_title=body.style.title,
+            style_desc=body.style.description or "",
+            dimensions=_dimensions_text(body.style),
+            examples=_examples_text(body.style),
             text=body.text,
-            criteria=_format_criteria(body.criteria),
         )
-        raw = call_llm(prompt, system="你是一个文本对比分析助手。", temperature=0.3)
+        raw = call_llm(prompt, system="你是一个风格分析助手。", temperature=0.3)
         data = json.loads(raw)
 
-        analyses = []
-        for a in data.get("criteria_analysis", []):
+        alignments = []
+        for a in data.get("dimension_alignments", []):
             deviations = [Deviation(**d) for d in a.get("deviations", [])]
-            analyses.append(CriterionAnalysis(
-                criterion_id=a.get("criterion_id", ""),
+            alignments.append(DimensionAlignment(
+                dimension_title=a.get("dimension_title", ""),
                 alignment_score=a.get("alignment_score", 0.0),
                 deviations=deviations,
             ))
 
         return ReviewResponse(
-            criteria_analysis=analyses,
+            dimension_alignments=alignments,
             overall_summary=data.get("overall_summary", ""),
         )
     except Exception as e:
@@ -187,21 +181,20 @@ def review(body: ReviewRequest):
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(body: AnalyzeRequest):
     try:
-        c = body.criterion
-        content_desc = c.content if c.type != "constraint" else c.description
+        dim = next((d for d in body.style.dimensions if d.title == body.dimension_title), None)
+        dim_desc = dim.description if dim else body.dimension_title
+
         prompt = ANALYZE_PROMPT.format(
-            name=c.name or c.id,
-            type=c.type,
-            content_desc=content_desc,
-            deviation_desc=body.deviation_description or "未提供",
+            dim_title=body.dimension_title,
+            dim_desc=dim_desc,
+            examples=_examples_text(body.style),
             text=body.text,
         )
         raw = call_llm(prompt, system="你是一个写作诊断专家。", temperature=0.3)
         data = json.loads(raw)
 
         return AnalyzeResponse(
-            criterion_id=c.id,
-            analysis_type=data.get("analysis_type", "pattern_contrast"),
+            dimension_title=body.dimension_title,
             original_pattern=data.get("original_pattern", {}),
             expected_pattern=data.get("expected_pattern", {}),
             gap_analysis=data.get("gap_analysis", {}),
@@ -217,13 +210,14 @@ def inspire(body: InspireRequest):
     try:
         variety_map = {"conservative": "贴近原文，小幅调整", "balanced": "平衡创新与保留", "creative": "大胆改写，探索多种可能性"}
         variety_text = variety_map.get(body.variety, "平衡创新与保留")
-        focus_text = "、".join(body.focus_areas) if body.focus_areas else "无特定限制"
+        target_dims = "、".join(body.target_dimensions) if body.target_dimensions else "所有维度"
 
         prompt = INSPIRE_PROMPT.format(
-            text=body.text,
-            criteria=_criteria_text(body.criteria),
+            style_desc=_dimensions_text(body.style),
+            examples=_examples_text(body.style),
+            target_dims=target_dims,
             variety_text=variety_text,
-            focus_text=focus_text,
+            text=body.text,
         )
         raw = call_llm(prompt, system="你是一个写作创意助手。", temperature=body.temperature)
         data = json.loads(raw)
@@ -232,7 +226,7 @@ def inspire(body: InspireRequest):
         return InspireResponse(
             original_text=body.text,
             inspirations=inspirations,
-            usage_note="这些是启发建议，你可以直接使用、组合或修改其中元素。最终文本请自行整合。",
+            usage_note="这些是启发建议，你可以直接使用、组合或修改其中元素。",
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))

@@ -74,7 +74,7 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
     try {
       final result = await _service.submitReview(
         text: state.text,
-        criteria: [],
+        style: {'title': '默认风格', 'dimensions': [], 'examples': []},
       );
       emit(state.copyWith(
         reviewResponse: result,
@@ -91,7 +91,7 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
     try {
       final result = await _service.submitReview(
         text: _sampleText,
-        criteria: [],
+        style: {'title': '默认风格', 'dimensions': [], 'examples': []},
       );
       emit(state.copyWith(reviewResponse: result, isLoading: false, isUsingProvider: true));
     } catch (e) {
@@ -156,7 +156,7 @@ class WritingReviewCubit extends Cubit<WritingReviewState> {
 
 class _TestAnalysisService implements AnalysisService {
   @override
-  Future<ReviewResponse> submitReview({required String text, required List<Map<String, dynamic>> criteria}) async {
-    return ReviewResponse(criteriaAnalysis: [], overallSummary: '测试分析结果');
+  Future<ReviewResponse> submitReview({required String text, required Map<String, dynamic> style}) async {
+    return ReviewResponse(dimensionAlignments: [], overallSummary: '测试分析结果');
   }
 }

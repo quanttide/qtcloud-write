@@ -5,11 +5,11 @@ class LocalAnalysisService implements AnalysisService {
   @override
   Future<ReviewResponse> submitReview({
     required String text,
-    required List<Map<String, dynamic>> criteria,
+    required Map<String, dynamic> style,
   }) async {
     return ReviewResponse(
-      criteriaAnalysis: [],
-      overallSummary: '本地分析完成（离线模式）。提交 criteria 后连接 Provider 可获得 AI 分析。',
+      dimensionAlignments: [],
+      overallSummary: '本地分析完成（离线模式）。连接 Provider 后可获得 AI 分析。',
     );
   }
 }

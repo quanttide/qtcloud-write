@@ -24,8 +24,8 @@ class RewriteTab extends StatelessWidget {
             decoration: BoxDecoration(color: WritingColors.surface2, borderRadius: BorderRadius.circular(8)),
             child: Text(state.reviewResponse!.overallSummary, style: const TextStyle(fontSize: 12, color: WritingColors.text, height: 1.5)),
           ),
-        if (state.reviewResponse!.criteriaAnalysis.isEmpty)
-          const Padding(padding: EdgeInsets.only(top: 16), child: Text('暂无分析数据。添加 criteria 后重新评审可获得 AI 分析。', style: TextStyle(fontSize: 12, color: WritingColors.textDim))),
+        if (state.reviewResponse!.dimensionAlignments.isEmpty)
+          const Padding(padding: EdgeInsets.only(top: 16), child: Text('暂无分析数据。提供风格模型后重新评审可获得 AI 分析。', style: TextStyle(fontSize: 12, color: WritingColors.textDim))),
       ],
     );
   }

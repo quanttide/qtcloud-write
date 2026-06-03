@@ -1,17 +1,17 @@
-class CriterionAnalysis {
-  final String criterionId;
+class DimensionAlignment {
+  final String dimensionTitle;
   final double alignmentScore;
   final List<Deviation> deviations;
 
-  CriterionAnalysis({
-    required this.criterionId,
+  DimensionAlignment({
+    required this.dimensionTitle,
     required this.alignmentScore,
     required this.deviations,
   });
 
-  factory CriterionAnalysis.fromJson(Map<String, dynamic> json) {
-    return CriterionAnalysis(
-      criterionId: json['criterion_id'],
+  factory DimensionAlignment.fromJson(Map<String, dynamic> json) {
+    return DimensionAlignment(
+      dimensionTitle: json['dimension_title'],
       alignmentScore: (json['alignment_score'] as num).toDouble(),
       deviations: (json['deviations'] as List)
           .map((d) => Deviation.fromJson(d))
@@ -41,18 +41,18 @@ class Deviation {
 }
 
 class ReviewResponse {
-  final List<CriterionAnalysis> criteriaAnalysis;
+  final List<DimensionAlignment> dimensionAlignments;
   final String overallSummary;
 
   ReviewResponse({
-    required this.criteriaAnalysis,
+    required this.dimensionAlignments,
     required this.overallSummary,
   });
 
   factory ReviewResponse.fromJson(Map<String, dynamic> json) {
     return ReviewResponse(
-      criteriaAnalysis: (json['criteria_analysis'] as List)
-          .map((a) => CriterionAnalysis.fromJson(a))
+      dimensionAlignments: (json['dimension_alignments'] as List)
+          .map((a) => DimensionAlignment.fromJson(a))
           .toList(),
       overallSummary: json['overall_summary'] ?? '',
     );
