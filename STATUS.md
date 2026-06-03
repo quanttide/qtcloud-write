@@ -5,30 +5,35 @@
 **定位**：AI 驱动叙事分析后端。LLM 分析管线 + 风格积累。
 
 **现状**：
-- `/review` `/reflect` `/rewrite` `/cycle` 四个端点可用
-- `StyleStore` 内存积累好文章风格语料
-- 端点有 error handling（502）
+- `/review` `/reflect` `/rewrite` `/cycle` 四个端点可用，均有 502 error handling
+- `call_llm` / `analyze_paragraph` / `compare_with_style` 三套 LLM 调用路径完整
+- `StyleStore` SQLite 持久化（`src/provider/data/store.db`），重启不丢失
+- `DEEPSEEK_API_KEY` 和 `LLM_API_KEY` 两种环境变量均支持
+- 日志按天轮转写入 `src/provider/data/provider.log`
 - Dockerfile + Terraform 就绪
+- 18 个测试
 
 **未完成**：
-- `quanttide-agent` 未加入 `pyproject.toml` 依赖，首次部署需手动 pip install
-- `StyleStore` 纯内存，重启即丢失风格积累
-- `/review` 返回的 `summary` 是三段硬编码文本，不随文章内容变化
-- 所有集成测试用 `autouse=True` mock 了整个 LLM 调用链，仅验证 HTTP 路由，不验证 AI 分析质量
+- `/review` 端点返回的 `summary` 是三段硬编码文本（"好文章，叙事结构清晰。" / "风格还在积累中…" / "根本问题不是…"），不随文章内容变化，与 LLM 分析结果无关
+- 集成测试用 `autouse=True` mock 了整个 LLM 调用链，仅验证 HTTP 路由和数据格式，不验证 AI 分析质量
+- `StyleStore` 无数据迁移/备份机制
 
 ## src/studio — 写作评审 Flutter 前端
 
-**定位**：写作评审桌面/Web 客户端。
+**定位**：写作评审桌面客户端（Linux）。
 
 **现状**：
-- 提交表单、评审结果展示可用
-- API 服务层已分离，通过 `--dart-define=API_URL` 注入后端地址
+- 3R 工作台：三栏布局、编辑器、Markdown 预览、空隙标记
+- 评审走统一 `AnalysisService` 接口，优先调后端 LLM，不可用时回退本地正则
+- `RemoteAnalysisService`（HTTP）+ `LocalAnalysisService`（正则包装），构造时必填，不可空
+- `runReview()` / `loadSample()` 均通过 `AnalysisService`，不再分两条路径
+- 深度分析按钮已合并到"评审"，UI 只有一个入口
+- 19 个组件、8 个模型、6 个服务、124 单元测试 + 6 集成测试
 
 **未完成**：
-- **双分析引擎**：Flutter 端有一套独立的正则分析引擎（`analysis_engine.dart`），后端有一套 LLM 引擎。前端 `runReview()` 优先调用后端，失败时静默回退到正则，用户无法感知当前用的是 AI 还是规则
-- **`DeepAnalysisService` 可空**：构造函数默认不注入，`loadSample()` 完全不走后端
-- **硬编码样本**：样本文本写在 Dart 文件里，不从 `tests/fixtures/` 加载
-- **3R 三 Tab 过重**：Review/Reflect/Rewrite 拆成三个独立面板，用户只需"帮我看稿子"一个操作
+- 样本文本仍然硬编码在 `writing_review_cubit.dart` 的 `_sampleText` 中
+- Reflect/Rewrite 标签页在后端返回数据前仅展示占位文字，无离线回退内容
+- `loadSample()` 在 Provider 不可用时走 `LocalAnalysisService`，但样本文本本身还是硬编码
 
 ## src/cli — 写作工作流引擎 (Rust)
 
@@ -45,18 +50,14 @@
 
 ## 已知架构问题
 
-### 前后端各做一半
+### 测试全绿 ≠ AI 可工作
 
-Flutter 有 `analysis_engine.dart`（正则），Python 有 `services/review.py`（LLM）。两套都能跑、都有测试、都有 UI，但前端不真正调用后端。新功能必须有从 UI → 网络 → 后端 → LLM → 返回 UI 的全链路测试才能标记完成。
+`conftest.py` 用 `autouse=True` mock 了全部 LLM 调用。18 个测试全过只说明 HTTP 路由和数据格式正确，不证明 LLM 能分析出有意义的结论。验收测试应使用真实 LLM（固定 prompt），mock 只该存活一个 PR 周期。
 
-### 测试全绿 ≠ 功能正常
+### 后端 summary 与 LLM 无关
 
-`conftest.py` 用 `autouse=True` mock 了全部 LLM 调用。测试通过只说明 HTTP 路由通，不证明分析质量。验收测试需用真实 LLM（可固定 prompt）。
+`/review` 的 summary 是三段 if/else 硬编码，即使 LLM 正常工作，这个结论也和 LLM 分析结果无关。LLM 返回的 `analysis` 字段仅出现在段落级别，不在文章级别呈现。
 
-### 数据契约不统一
+### 样本仅存在于前端
 
-前后端对"空隙"的定义不同——前端用 `line: int`（行号），后端用 `location: str`（描述文本）。同一概念在两端表现不一致，前端能跳转到行但后端不返回行号。
-
-### 占位功能无截止时间
-
-可空依赖 + 测试覆盖报错路径 = 技术债被正式化。`DeepAnalysisService?` 的可空设计让编译器不报错，但"深度分析"功能始终未实现。
+测试样本（good/bad 文章）只被 Python 测试使用。Flutter 前端没有从 `tests/fixtures/` 加载样本的入口，也没有从后端获取样本的 API。前后端各有自己的样本数据。
