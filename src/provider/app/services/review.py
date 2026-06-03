@@ -2,13 +2,17 @@ from app.models import Article, ParagraphReview, Comparison
 from app.services.llm import analyze_paragraph, compare_with_style
 
 
-def review_article(article: Article, is_style_available: bool) -> tuple[list[ParagraphReview], list[dict]]:
+def review_article(
+    article: Article,
+    is_style_available: bool,
+    style_examples: list[Article] | None = None,
+) -> tuple[list[ParagraphReview], list[dict]]:
     """
     评审文章，核心逻辑委托给 LLM。
     """
     reviews = []
     suggestions = []
-    style_examples = []  # TODO: 从 store 获取风格范例
+    style_examples = style_examples or []
 
     for i, para in enumerate(article.paragraphs):
         # 用 LLM 分析段落

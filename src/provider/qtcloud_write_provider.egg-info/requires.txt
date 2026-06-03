@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+hvac
+pydantic-settings
+quanttide-agent
