@@ -69,6 +69,8 @@ class WritingReviewState {
 class WritingReviewCubit extends Cubit<WritingReviewState> {
   final DeepAnalysisService? _deepService;
 
+  bool get hasDeepService => _deepService != null;
+
   WritingReviewCubit({DeepAnalysisService? deepService})
       : _deepService = deepService,
         super(const WritingReviewState());

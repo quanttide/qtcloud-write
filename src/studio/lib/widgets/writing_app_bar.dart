@@ -40,12 +40,14 @@ class WritingAppBar extends StatelessWidget {
             isPrimary: true,
             onPressed: () => cubit.runReview(),
           ),
-          const SizedBox(width: 6),
-          _AppBarButton(
-            label: '🧠 深度分析',
-            isPrimary: false,
-            onPressed: () => cubit.runDeepAnalysis(),
-          ),
+          if (cubit.hasDeepService) ...[
+            const SizedBox(width: 6),
+            _AppBarButton(
+              label: '🧠 深度分析',
+              isPrimary: false,
+              onPressed: () => cubit.runDeepAnalysis(),
+            ),
+          ],
           const SizedBox(width: 6),
           _AppBarButton(
             label: '加载样本',

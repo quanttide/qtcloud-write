@@ -25,7 +25,7 @@ void main() {
       cubit.loadSample();
       await tester.pumpWidget(_buildApp(cubit));
       await tester.pump();
-      expect(find.text('可写位置'), findsOneWidget);
+      expect(find.textContaining('可写位置'), findsOneWidget);
       cubit.close();
     });
 

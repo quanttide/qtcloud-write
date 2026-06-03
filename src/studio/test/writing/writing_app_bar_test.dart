@@ -19,7 +19,8 @@ void main() {
       expect(find.text('✎ 写作云'), findsOneWidget);
       expect(find.text('合成工作台'), findsOneWidget);
       expect(find.text('▶ 评审'), findsOneWidget);
-      expect(find.text('🧠 深度分析'), findsOneWidget);
+      // 无 deep service 时不显示深度分析按钮
+      expect(find.text('🧠 深度分析'), findsNothing);
       expect(find.text('加载样本'), findsOneWidget);
       cubit.close();
     });

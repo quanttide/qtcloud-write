@@ -23,28 +23,13 @@ class DraftPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ArticleItem(
-                  icon: '✎',
-                  name: '咖啡厅重逢',
-                  status: hasContent ? '当前' : null,
-                  isActive: true,
-                ),
-                const SizedBox(height: 8),
                 GestureDetector(
                   onTap: onLoadSample,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    decoration: BoxDecoration(
-                      color: WritingColors.surface2,
-                      border: Border.all(color: WritingColors.border),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      '加载测试底稿',
-                      style: TextStyle(fontSize: 11, color: WritingColors.text),
-                      textAlign: TextAlign.center,
-                    ),
+                  child: _ArticleItem(
+                    icon: '✎',
+                    name: '咖啡厅重逢',
+                    status: hasContent ? '当前' : null,
+                    isActive: true,
                   ),
                 ),
               ],

@@ -24,7 +24,7 @@ class RewriteTab extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       children: [
         const Text(
-          '改写建议',
+          '改写建议 — 点击「定位到此处」跳转到对应位置修改',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,

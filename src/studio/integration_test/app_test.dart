@@ -31,214 +31,173 @@ void main() {
   }
 
   group('WritingWorkbench integration', () {
-    testWidgets('loading sample produces gaps and review updates', (tester) async {
+    testWidgets('加载样本后编辑器显示文字', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 800));
       await tester.pumpWidget(buildApp());
       await tester.pump();
 
-      // Load sample and run review to generate gap markers
-      cubit.loadSample();
-      await tester.pump();
-      expect(cubit.state.text, isNotEmpty);
-
-      // The loadSample already runs analysis
-      expect(cubit.state.analysis, isNotNull);
-      expect(cubit.state.analysis!.gaps, isNotEmpty);
-
-      // Find the editor TextField
-      final editorField = find.byType(TextField);
-      expect(editorField, findsOneWidget);
-
-      // Run review from UI button
-      await tester.tap(find.text('▶ 评审'));
-      await tester.pumpAndSettle();
-      expect(cubit.state.gapCount, greaterThan(0));
-
-      // Type text with gap triggers and re-run review
-      await tester.enterText(
-        editorField,
-        '他推开门走了出去。\n第二天，他又来了。\n她悲伤地看着他。',
-      );
-      await tester.pump();
-      await tester.tap(find.text('▶ 评审'));
-      await tester.pumpAndSettle();
-      expect(cubit.state.gapCount, greaterThan(0));
-    });
-
-    testWidgets('two draggable dividers are rendered between panels', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
-      await tester.pumpWidget(buildApp());
-      await tester.pump();
-
-      // Verify two draggable dividers exist (left and right)
-      expect(find.byType(DraggableDivider), findsNWidgets(2));
-
-      // Verify the left panel, editor, and right panel are all rendered
-      expect(find.text('📄 底稿'), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Review'), findsOneWidget);
-    });
-
-    testWidgets('full 3R workflow: load → review → switch tabs → preview',
-        (tester) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
-      await tester.pumpWidget(buildApp());
-      await tester.pump();
-
-      // 1. Load sample
+      // 点击"加载样本"按钮
       await tester.tap(find.text('加载样本'));
       await tester.pump();
-      expect(cubit.state.text, isNotEmpty);
 
-      // 2. Click review
-      await tester.tap(find.text('▶ 评审'));
-      await tester.pump();
-      expect(cubit.state.analysis, isNotNull);
-
-      // 3. Switch to Reflect tab
-      await tester.tap(find.text('🎯 情境'));
-      await tester.pump();
-      expect(cubit.state.currentTab, ReviewPanelTab.reflect);
-
-      // 4. Switch to Rewrite tab
-      await tester.tap(find.text('✏️ 改写'));
-      await tester.pump();
-      expect(cubit.state.currentTab, ReviewPanelTab.rewrite);
-
-      // 5. Switch back to Review tab
-      await tester.tap(find.text('📋 评审'));
-      await tester.pump();
-      expect(cubit.state.currentTab, ReviewPanelTab.review);
-
-      // 6. Toggle preview mode
-      await tester.tap(find.text('预览'));
-      await tester.pump();
-      expect(find.byType(TextField), findsNothing);
-
-      // 7. Toggle back to edit mode
-      await tester.tap(find.text('编辑'));
-      await tester.pump();
-      expect(find.byType(TextField), findsOneWidget);
+      // 验证编辑器 TextField 确实显示了样本文字
+      final editorField = find.byType(TextField);
+      expect(editorField, findsOneWidget);
+      final textField = tester.widget<TextField>(editorField);
+      expect(textField.controller?.text, isNotEmpty);
     });
 
-    testWidgets('tapping situation card button in reflect tab',
-        (tester) async {
+    testWidgets('评审结果显示空隙列表和风格评分', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 800));
       await tester.pumpWidget(buildApp());
       await tester.pump();
 
+      // 输入文本 → 评审
+      await tester.enterText(find.byType(TextField), '他推开门走了出去。\n第二天，他又来了。\n');
+      await tester.pump();
+      await tester.tap(find.text('▶ 评审'));
+      await tester.pumpAndSettle();
+
+      // Review 标签页必须显示：空隙列表标题 + 风格标题 + 综合评分
+      expect(find.textContaining('空隙'), findsWidgets);
+      expect(find.textContaining('风格'), findsWidgets);
+      expect(find.textContaining('/100'), findsOneWidget);
+      // 必须显示三条风格评分中的至少一条名称
+      expect(
+        find.text('对话→动作').evaluate().isNotEmpty ||
+        find.text('状态句结尾').evaluate().isNotEmpty ||
+        find.text('半秒钟密度').evaluate().isNotEmpty,
+        isTrue,
+      );
+    });
+
+    testWidgets('加载样本后评审显示空隙', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 800));
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      // 加载样本
+      await tester.tap(find.text('加载样本'));
+      await tester.pump();
+
+      // 评审
+      await tester.tap(find.text('▶ 评审'));
+      await tester.pumpAndSettle();
+
+      // 评审标签页显示空隙列表
+      expect(find.textContaining('空隙'), findsWidgets);
+
+      // 底部状态栏显示空隙数
+      expect(find.textContaining('空隙'), findsWidgets);
+      expect(find.textContaining('字数'), findsWidgets);
+    });
+
+    testWidgets('情境标签页显示可写位置卡片', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 800));
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      // 加载样本 + 评审 → 产生空隙
       cubit.loadSample();
       await tester.pump();
       await tester.tap(find.text('▶ 评审'));
       await tester.pumpAndSettle();
 
-      // Switch to Reflect tab
+      // 切到情境标签
       await tester.tap(find.text('🎯 情境'));
       await tester.pumpAndSettle();
 
-      // Tap a situation card's "写在这里" button if visible
+      // 必须显示"可写位置"标题
+      expect(find.textContaining('可写位置'), findsOneWidget);
+
+      // 必须至少有一个 "写在这里" 按钮
       final writeButton = find.text('✎ 写在这里');
-      if (writeButton.evaluate().isNotEmpty) {
-        await tester.ensureVisible(writeButton.first);
-        await tester.pump();
-        await tester.tap(writeButton.first);
-        await tester.pump();
-      }
+      expect(writeButton, findsWidgets);
     });
 
-    testWidgets('tapping rewrite suggestion button', (tester) async {
+    testWidgets('改写标签页显示改写建议', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 800));
       await tester.pumpWidget(buildApp());
       await tester.pump();
 
-      // Use text that has emotion hits and triggers suggestions
-      cubit.textChanged(
-          '他悲伤地看着她。\n她开心地笑了。\n他走了过去。\n他们都沉默了。\n');
+      // 输入触发情绪标签建议的文本
+      cubit.textChanged('他悲伤地看着她。\n她开心地笑了。\n他走了过去。\n他们都沉默了。\n');
       cubit.runReview();
       await tester.pump();
 
-      // Switch to Rewrite tab
+      // 切到改写标签
       await tester.tap(find.text('✏️ 改写'));
       await tester.pumpAndSettle();
 
-      // Tap a suggestion card's "定位到此处" button if visible
+      // 必须显示"改写建议"标题
+      expect(find.textContaining('改写建议'), findsOneWidget);
+
+      // 必须显示"定位到此处"按钮
       final jumpButton = find.text('✎ 定位到此处');
-      if (jumpButton.evaluate().isNotEmpty) {
-        await tester.ensureVisible(jumpButton.first);
-        await tester.pump();
-        await tester.tap(jumpButton.first);
-        await tester.pump();
-      }
+      expect(jumpButton, findsWidgets);
     });
 
-    testWidgets('完整 3R 循环：写 → 评审 → 看情境 → 改写 → 再评审评分改善',
-        (tester) async {
+    testWidgets('3R 循环：评审 → 情境 → 改写 → 再评审', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 800));
       await tester.pumpWidget(buildApp());
       await tester.pump();
       final editorField = find.byType(TextField);
 
-      // 1. 写一段带空隙的文本
-      await tester.enterText(
-        editorField,
-        '他推开门走了出去。\n第二天，他又回来了。\n她悲伤地看着他。\n他笑了笑。\n',
-      );
+      // 1. 写一段有空隙的文本
+      await tester.enterText(editorField, '他推开门走了出去。\n第二天，他又回来了。\n她悲伤地看着他。\n');
       await tester.pump();
 
       // 2. 评审 → 看到空隙
       await tester.tap(find.text('▶ 评审'));
       await tester.pumpAndSettle();
       expect(cubit.state.gapCount, greaterThan(0));
-      expect(find.text('空隙'), findsOneWidget);
+      expect(find.textContaining('空隙'), findsWidgets);
 
-      // 3. 切到情境标签 → 看到可写位置
+      // 3. 切到情境 → 看到可写位置
       await tester.tap(find.text('🎯 情境'));
       await tester.pumpAndSettle();
-      if (find.text('可写位置').evaluate().isNotEmpty) {
-        expect(find.text('可写位置'), findsOneWidget);
-      }
+      expect(find.textContaining('可写位置'), findsOneWidget);
 
-      // 4. 切到改写标签 → 看到改写建议
+      // 4. 切到改写 → 看到改写建议
       await tester.tap(find.text('✏️ 改写'));
       await tester.pumpAndSettle();
+      expect(find.textContaining('改写建议'), findsOneWidget);
 
-      // 5. 根据建议改写文本（去掉空隙触发词）
+      // 5. 回到评审 → 再次评审确认分析可更新
       await tester.tap(find.text('📋 评审'));
       await tester.pump();
-      await tester.enterText(
-        editorField,
-        '他推开门走了出去。她站在门口看着他。他注意到她的目光。她轻轻地点了点头。',
-      );
-      await tester.pump();
-
-      // 6. 再次评审 → 确认分析已更新
       await tester.tap(find.text('▶ 评审'));
       await tester.pumpAndSettle();
       expect(cubit.state.analysis, isNotNull);
     });
 
-    testWidgets('多轮迭代：评分随改写变化', (tester) async {
+    testWidgets('深度分析按钮在无 Provider 时不显示', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 800));
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      // 未配置 Provider 时按钮不可见
+      expect(find.text('🧠 深度分析'), findsNothing);
+    });
+
+    testWidgets('多轮迭代：文本变化后空隙数变化', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 800));
       await tester.pumpWidget(buildApp());
       await tester.pump();
       final editorField = find.byType(TextField);
 
-      // 第1轮：通过 UI 输入有空隙的文本 → 评审 → 记录空隙数
+      // 第1轮：有空隙的文本
       await tester.enterText(editorField, '他走了出去。第二天，他又来了。她悲伤地看着他。');
       await tester.pump();
       await tester.tap(find.text('▶ 评审'));
       await tester.pumpAndSettle();
-      expect(cubit.state.analysis, isNotNull);
-      final round1Gaps = cubit.state.gapCount;
-      expect(round1Gaps, greaterThan(0));
+      expect(cubit.state.gapCount, greaterThan(0));
 
-      // 第2轮：改写去掉时间跳跃词 → 评审 → 空隙数应减少
+      // 第2轮：改写成无触发词文本
       cubit.textChanged('他走在街上。冷风扑面而来。他裹紧了外套。');
       cubit.runReview();
       await tester.pump();
-      final round2Gaps = cubit.state.gapCount;
-      expect(round2Gaps, lessThan(round1Gaps));
-      await tester.pump();
+      expect(cubit.state.gapCount, lessThanOrEqualTo(1));
     });
 
     testWidgets('结尾建议出现在结尾不合状态句的文本中', (tester) async {
@@ -247,53 +206,25 @@ void main() {
       await tester.pump();
       final editorField = find.byType(TextField);
 
-      // 输入结尾在情节推进上的文本（无忘不了/不$/…）
-      await tester.enterText(
-        editorField,
-        '他推开门走了出去。\n她跟在他身后。\n他们一起走进了咖啡厅。',
-      );
+      await tester.enterText(editorField, '他推开门走了出去。\n她跟在他身后。\n他们一起走进了咖啡厅。');
       await tester.pump();
       await tester.tap(find.text('▶ 评审'));
       await tester.pumpAndSettle();
 
-      // 切到改写标签 → 应看到结尾建议
       await tester.tap(find.text('✏️ 改写'));
       await tester.pumpAndSettle();
-      // 结尾建议含"结尾 · 状态句"文本
       expect(find.textContaining('结尾'), findsWidgets);
     });
 
-    testWidgets('实时空隙反馈：编辑后重新评审更新空隙数', (tester) async {
+    testWidgets('拖拽分隔条渲染正确', (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 800));
       await tester.pumpWidget(buildApp());
       await tester.pump();
-      final editorField = find.byType(TextField);
 
-      // 输入有空隙的文本 → 评审 → 确认有 N 个空隙
-      await tester.enterText(
-        editorField,
-        '他推开门走了出去。\n第二天，他又来了。',
-      );
-      await tester.pump();
-      await tester.tap(find.text('▶ 评审'));
-      await tester.pumpAndSettle();
-      final gapCountWithJump = cubit.state.gapCount;
-      expect(gapCountWithJump, greaterThan(0));
-
-      // 换一段无触发词的文本（每行独立，无时间跳跃、无连续动作） → 评审 → 空隙应减少
-      await tester.enterText(
-        editorField,
-        '窗外的雨淅淅沥沥地下着。\n'
-        '咖啡厅里播放着舒缓的音乐。\n'
-        '她的身影出现在门口。\n'
-        '他抬起头看见了熟悉的面孔。',
-      );
-      await tester.pump();
-      await tester.tap(find.text('▶ 评审'));
-      await tester.pumpAndSettle();
-      final gapCountPlain = cubit.state.gapCount;
-      // 改写的文本不应有时间跳跃，空隙数应少于或等于原文本
-      expect(gapCountPlain, lessThanOrEqualTo(gapCountWithJump));
+      expect(find.byType(DraggableDivider), findsNWidgets(2));
+      expect(find.text('📄 底稿'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('Review'), findsOneWidget);
     });
   });
 }

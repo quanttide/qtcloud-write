@@ -29,8 +29,8 @@ void main() {
       cubit.textChanged('第二天，他走到了街上。');
       cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));
-      expect(find.text('空隙'), findsOneWidget);
-      expect(find.text('风格'), findsOneWidget);
+      expect(find.textContaining('空隙'), findsOneWidget);
+      expect(find.textContaining('风格'), findsOneWidget);
       cubit.close();
     });
 

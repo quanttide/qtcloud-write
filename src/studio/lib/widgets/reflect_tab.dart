@@ -24,7 +24,7 @@ class ReflectTab extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       children: [
         const Text(
-          '可写位置',
+          '可写位置 — 点击「写在这里」跳转到编辑器对应行',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,

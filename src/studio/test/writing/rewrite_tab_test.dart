@@ -26,7 +26,7 @@ void main() {
       cubit.runReview();
       await tester.pumpWidget(_buildApp(cubit));
       await tester.pump();
-      expect(find.text('改写建议'), findsOneWidget);
+      expect(find.textContaining('改写建议'), findsOneWidget);
       cubit.close();
     });
 

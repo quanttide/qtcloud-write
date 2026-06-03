@@ -30,7 +30,7 @@ class ReviewTab extends StatelessWidget {
       children: [
         if (gaps.isNotEmpty) ...[
           const Text(
-            '空隙',
+            '叙事空隙 — 节奏偏快的位置，可补充细节',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -47,7 +47,7 @@ class ReviewTab extends StatelessWidget {
         ],
         if (styles.isNotEmpty) ...[
           const Text(
-            '风格',
+            '风格评分 — 数值越高越好',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
