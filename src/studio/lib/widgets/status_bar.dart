@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import '../blocs/writing_review_cubit.dart';
+import '../themes/writing_theme.dart';
+
+class StatusBar extends StatelessWidget {
+  final WritingReviewCubit cubit;
+
+  const StatusBar({super.key, required this.cubit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 26,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: WritingColors.surface,
+        border: Border(top: BorderSide(color: WritingColors.border)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            '字数 ',
+            style: TextStyle(fontSize: 11, color: WritingColors.textDim),
+          ),
+          Text(
+            '${cubit.state.charCount}',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: WritingColors.text,
+            ),
+          ),
+          if (cubit.state.reviewResponse != null) ...[
+            const SizedBox(width: 12),
+            Text(
+              cubit.state.isUsingProvider ? 'AI分析' : '本地分析',
+              style: TextStyle(fontSize: 11, color: WritingColors.textDim),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

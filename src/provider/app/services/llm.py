@@ -1,7 +1,7 @@
 from quanttide_agent import LLM
 
 from app.config import get_settings
-from app.models import Article, Comparison
+
 
 _client = None
 
@@ -18,36 +18,20 @@ def _get_client() -> LLM:
     return _client
 
 
-def analyze_paragraph(paragraph: str, position: int, total: int, article_tag: str) -> dict:
+def _check_api_key():
     settings = get_settings()
     if not settings.llm_api_key:
-        raise ValueError("llm_api_key 未配置，请在 .env 中设置 DeepSeek API Key")
-
-    prompt = _build_analyze_prompt(paragraph, position, total, article_tag)
-    response = _get_client().chat(
-        [
-            {"role": "system", "content": "你是一个专业的叙事结构分析助手。请根据用户输入的段落，分析其叙事功能。"},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.3,
-    )
-    return _parse_analyze_response(response.content, paragraph)
+        raise ValueError("请配置 LLM_API_KEY 或 DEEPSEEK_API_KEY 环境变量")
 
 
-def compare_with_style(paragraph: str, tag: str, style_examples: list[Article]) -> Comparison | None:
-    if not style_examples:
-        return None
-
-    settings = get_settings()
-    if not settings.llm_api_key:
-        return None
-
-    prompt = _build_compare_prompt(paragraph, tag, style_examples)
-    response = _get_client().chat(
-        [
-            {"role": "system", "content": "你是一个专业的写作风格评审专家。请对比分析给定段落与风格范例的差异。"},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.3,
-    )
-    return _parse_compare_response(response.content)
+def call_llm(prompt: str, system: str = "", temperature: float = 0.3) -> str:
+    _check_api_key()
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    try:
+        response = _get_client().complete(messages, temperature=temperature)
+        return response.content
+    except Exception as e:
+        raise RuntimeError(f"LLM 调用失败: {e}") from e

@@ -4,11 +4,12 @@
 
 | 文档 | 认知角色 | 内容概要 |
 |------|----------|----------|
-| [ROADMAP.md](ROADMAP.md) | 方向 | 目标 + 行动列表，不承载状态回顾 |
-| [docs/index.md](docs/index.md) | 架构 | 场景—困境—救援—新生 |
-| [docs/brd/index.md](docs/brd/index.md) | 业务 | 为什么做、业务场景、问题分析 |
-| [docs/prd/index.md](docs/prd/index.md) | 需求 | 核心用户故事、验收标准 |
-| [docs/pmd/index.md](docs/pmd/index.md) | 管理 | 当前阶段、待验证方向 |
+| [README.md](README.md) | 用户 | 快速开始、命令参考 |
+| [CHANGELOG.md](CHANGELOG.md) | 用户 | 版本变更记录 |
+| [STATUS.md](STATUS.md) | 用户 | 项目总览与子项目概括 |
+| [AGENTS.md](AGENTS.md) | 内部 | 开发心智模型与执行约束 |
+
+> 设计文档（BRD/PRD/PMD/QA/IXD/ADD）已迁移至 [docs/vision/platform](https://github.com/quanttide/quanttide-vision-of-narrative-engineering)。
 
 ## 执行约束
 
@@ -28,17 +29,11 @@
 
 ## 执行约束
 
-### ROADMAP 写法
+### PMD 承载方向
 
-ROADMAP 是减负工具——让人不需要问"接下来呢"。
+方向文档已合并到 PMD。PMD 既承载"做过什么、待验证方向"，也承接原 ROADMAP 的减负职责——让人不需要问"接下来呢"。
 
-**作用：**
-- 完成一项就打勾，旧事自然翻篇
-- 工作暂停后重启时，扫一眼就知道站在哪
-- 不指挥做什么，但消除重新对齐上下文的成本
-
-**结构：**
+**PMD 的方向部分结构：**
 - **目标**：一句话说明当前要验证什么
 - **行动**：checkbox 列表，每项动作用 `—` 行内说明意图
-
-与 PMD 的分工：PMD 承载"做过什么、待验证方向"，ROADMAP 不重复这些。
+- **回顾**：已完成项用 `✓` 标记，自然翻篇
