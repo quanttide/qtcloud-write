@@ -35,14 +35,14 @@ enum Commands {
         #[arg(long)]
         title: Option<String>,
     },
-    /// O-Organize:LLM 从日志提取主题,更新日志 YAML 归属(保留人工标注)
+    /// O-Organize:LLM 从日志提取主题,更新日志 YAML 归属(分组,保留人工标注)
     Organize,
-    /// D-Distill:按主题聚合日志条目并组织(LLM 删除次要信息)→ materials/<主题>.md
+    /// D-Distill:过滤次要信息并统一表达 → 初稿 materials/<主题>.md
     Distill { topic: String },
-    /// E-Express:基于提炼稿生成初稿 → <主题>-初稿.md
+    /// E-Express:根据写作目标形成定稿 → <主题>-定稿.md(缺省自动判断意图)
     Express {
         topic: String,
-        /// 定稿目标(如"写一篇品牌故事"):基于初稿生成定稿 → <主题>-定稿.md
+        /// 写作目标(如"写一篇品牌故事");缺省自动根据内容判断
         #[arg(long)]
         goal: Option<String>,
     },

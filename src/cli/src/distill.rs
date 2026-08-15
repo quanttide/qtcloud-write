@@ -1,8 +1,8 @@
-//! D-Distill(组织):按主题聚合日志条目,调 LLM 删除次要信息,
-//! 输出提炼稿 materials/<topic>.md。
+//! D-Distill(提取):按主题聚合日志条目,过滤次要信息并统一表达,
+//! 形成初稿 materials/<topic>.md(产物 03)。
 //!
-//! 产物链:collect(收集) → organize(主题标注) → distill(组织/提炼)
-//! → express(初稿) → express --goal(定稿)。
+//! 产物链:01 收集(collect) → 02 分组(organize) → 03 初稿(distill)
+//! → 04 定稿(express)。
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -24,29 +24,29 @@ pub fn collect_for_topic(workdir: &Path, topic: &str) -> Result<Vec<Entry>, Stri
         }
     }
     if collected.is_empty() {
-        return Err(format!("主题「{}」暂无归属条目,先用 material organize 提取主题", topic));
+        return Err(format!("主题「{}」暂无归属条目,先用 material organize 分组", topic));
     }
     collected.sort_by(|a, b| (a.file.clone(), a.id.clone()).cmp(&(b.file.clone(), b.id.clone())));
     Ok(collected)
 }
 
-/// 组织提示词:删除次要信息(通用判据,不针对特定文本)。
-pub fn build_refine_prompt(topic: &str, aggregate: &str) -> String {
+/// 初稿提示词:过滤次要信息 + 统一表达(通用判据,不针对特定文本)。
+pub fn build_draft_prompt(topic: &str, aggregate: &str) -> String {
     format!(
-        "以下是从日志中聚合的写作素材(主题:{topic})。请对素材进行组织:\n\
-         删除次要信息:\n\
+        "以下是从日志中按主题聚合的写作素材(主题:{topic})。请形成一篇初稿:\n\
+         1. 过滤次要信息:\n\
          - 过程性叙述:记录\"正在做/打算做\"的过程性语句(如\"我打算\"\"我在尝试\"\"最近\"),只保留其中的结论或洞察\n\
          - 用途信息:关于素材将被用于什么、发布到哪里的说明(如发布渠道、宣传用途、收益安排、目标账号),除非该用途本身是主题的核心问题\n\
          - 区分动机与用途:\"为什么写\"是主题核心,应保留;\"写完之后拿去做什么\"属于事务性用途,默认删除\n\
          - 重复表述:同一观点多次出现时只保留最完整的一次\n\
          - 即时情绪宣泄:直接的情绪感叹与自我对话;若其中包含可迁移的洞察则保留洞察\n\
-         保留:核心观点、关键设定、可复用的洞察、事实、金句。\n\
+         2. 统一表达:用一致的人称与语气连贯组织过滤后的内容,形成一篇结构完整的初稿(markdown,与素材同语言)。\n\
          输出前自查:若结果中仍包含具体事务主体(特定发布渠道、特定事务用途),视为未删净,应删除。\n\
-         输出:结构化 markdown(按要点分组)。只输出结果,不要解释。\n\n素材:\n{aggregate}"
+         只输出初稿,不要解释。\n\n素材:\n{aggregate}"
     )
 }
 
-/// 执行 distill:聚合 → LLM 组织(删除次要信息)→ materials/<topic>.md。
+/// 执行 distill:聚合 → LLM 过滤次要信息并统一表达 → 初稿 materials/<topic>.md。
 pub fn distill(workdir: &Path, topic: &str) -> Result<PathBuf, String> {
     let collected = collect_for_topic(workdir, topic)?;
 
@@ -59,8 +59,8 @@ pub fn distill(workdir: &Path, topic: &str) -> Result<PathBuf, String> {
         aggregate.push_str(&format!("【{}】\n{}\n", e.reference(), e.text));
     }
 
-    let prompt = build_refine_prompt(topic, &aggregate);
-    let refined = crate::organize::run_llm(&prompt)?;
+    let prompt = build_draft_prompt(topic, &aggregate);
+    let draft = crate::organize::run_llm(&prompt)?;
 
     // front matter:topic + sources
     let mut fm = FrontMatter::default();
@@ -72,7 +72,7 @@ pub fn distill(workdir: &Path, topic: &str) -> Result<PathBuf, String> {
     let dir = workdir.join("materials");
     fs::create_dir_all(&dir).map_err(|e| format!("mkdir materials: {e}"))?;
     let path = dir.join(format!("{}.md", topic));
-    fs::write(&path, format!("{}{}", crate::frontmatter::render(&fm), refined))
+    fs::write(&path, format!("{}{}", crate::frontmatter::render(&fm), draft))
         .map_err(|e| format!("write {}: {e}", path.display()))?;
     Ok(path)
 }
@@ -123,10 +123,12 @@ mod tests {
     }
 
     #[test]
-    fn refine_prompt_contains_material() {
-        let p = build_refine_prompt("宣传册", "素材正文");
+    fn draft_prompt_contains_material() {
+        let p = build_draft_prompt("宣传册", "素材正文");
         assert!(p.contains("宣传册"));
         assert!(p.contains("素材正文"));
-        assert!(p.contains("删除次要信息"));
+        assert!(p.contains("过滤次要信息"));
+        assert!(p.contains("统一表达"));
+        assert!(p.contains("初稿"));
     }
 }
