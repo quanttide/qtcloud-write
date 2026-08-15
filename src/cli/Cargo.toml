@@ -2,9 +2,6 @@
 name = "narrative-engineering"
 version = "0.1.0"
 edition = "2021"
-description = "量潮叙事工程实验室 — 基于范畴论的写作工作流引擎"
+description = "量潮叙事工程实验室 — 写作工作流引擎(壳,新模型 material → outline → draft → final 待实现)"
 
 [dependencies]
-pr4xis = "0.6"
-serde = { version = "1", features = ["derive"] }
-serde_yaml = "0.9"

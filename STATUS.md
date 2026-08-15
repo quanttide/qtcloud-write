@@ -38,10 +38,11 @@
 
 ## src/cli — 写作工作流引擎 (Rust)
 
-**定位**：待定。当前为 demo 状态。
+**定位**：壳保留。旧实现(范畴论路线)已移除,新模型 `material → outline → draft → final` 待实现。
 
 **现状**：
-- CLI demo 可运行标准写作流程
+- 仅保留项目骨架(Cargo.toml、lib.rs 占位),无实现代码
+- 旧实现完整版本见 git 历史 `b47f0b6`
 - 与 provider / studio 未集成
 
 ## 已知架构问题
