@@ -2,6 +2,13 @@
 name = "narrative-engineering"
 version = "0.1.0"
 edition = "2021"
-description = "量潮叙事工程实验室 — 写作工作流引擎(壳,新模型 material → outline → draft → final 待实现)"
+description = "量潮叙事工程实验室 — 写作工作流引擎(material → outline → draft → final)"
 
 [dependencies]
+chrono = "0.4"
+clap = { version = "4", features = ["derive"] }
+quanttide-agent = "0.1"
+
+[[bin]]
+name = "material"
+path = "src/main.rs"
