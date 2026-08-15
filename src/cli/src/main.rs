@@ -65,17 +65,16 @@ fn run(cli: Cli) -> Result<(), String> {
             }
             _ => Err("collect 需要提供想法文本,或 --url 链接(二选一)".into()),
         },
-        Commands::Organize => match narrative_engineering::organize::organize(&workdir) {
-            Ok(0) => {
-                println!("日志中暂无未标注条目");
-                Ok(())
+        Commands::Organize => {
+            let updated = narrative_engineering::organize::organize(&workdir)?;
+            let groups = narrative_engineering::organize::write_groups(&workdir)?;
+            println!("已更新 {} 条条目归属(建议,可编辑日志 YAML 修正)", updated);
+            println!("已生成 {} 个分组:", groups.len());
+            for g in &groups {
+                println!("  {}", g.display());
             }
-            Ok(n) => {
-                println!("已更新 {} 条条目归属(建议,可编辑日志 YAML 修正)", n);
-                Ok(())
-            }
-            Err(e) => Err(e),
-        },
+            Ok(())
+        }
         Commands::Distill { topic } => {
             let path = narrative_engineering::distill::distill(&workdir, &topic)?;
             println!("已组织:{}", path.display());

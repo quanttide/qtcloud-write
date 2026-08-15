@@ -4,7 +4,8 @@
 //! 各文件 front matter(仅写入未标注条目,保留人工标注)。
 
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 use quanttide_agent::llm::{CompleteOptions, LLM};
 use quanttide_agent::message::Message;
@@ -104,6 +105,48 @@ pub fn organize(workdir: &Path) -> Result<usize, String> {
         }
     }
     Ok(updated)
+}
+
+/// 生成分组产物:按主题聚合日志条目 → groups/<主题>.md(02 分组)。
+/// 读取最新 YAML 归属(含人工修改),幂等重建。返回生成的文件路径列表。
+pub fn write_groups(workdir: &Path) -> Result<Vec<PathBuf>, String> {
+    use crate::frontmatter::FrontMatter;
+
+    // 所有出现过的主题(保持顺序)
+    let journals = journal::read_all(workdir)?;
+    let mut topics: Vec<String> = vec![];
+    for jf in &journals {
+        for t in jf.fm.topics.values() {
+            if !topics.contains(t) {
+                topics.push(t.clone());
+            }
+        }
+    }
+
+    let dir = workdir.join("groups");
+    fs::create_dir_all(&dir).map_err(|e| format!("mkdir groups: {e}"))?;
+    let mut out = vec![];
+    for topic in topics {
+        let entries = journal::collect_for_topic(workdir, &topic)?;
+        let mut fm = FrontMatter::default();
+        fm.topic = Some(topic.clone());
+        for e in &entries {
+            fm.sources.push(format!("journal/{}", e.reference()));
+        }
+        let mut body = String::new();
+        for e in &entries {
+            if !body.is_empty() {
+                body.push('\n');
+            }
+            body.push_str(&e.text);
+            body.push_str(&format!("\n\n> 来源:journal/{}\n", e.reference()));
+        }
+        let path = dir.join(format!("{}.md", topic));
+        fs::write(&path, format!("{}{}", crate::frontmatter::render(&fm), body))
+            .map_err(|e| format!("write {}: {e}", path.display()))?;
+        out.push(path);
+    }
+    Ok(out)
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-//! D-Distill(提取):按主题聚合日志条目,过滤次要信息并统一表达,
+//! D-Distill(提取):读分组产物,过滤次要信息并统一表达,
 //! 形成初稿 materials/<topic>.md(产物 03)。
 //!
 //! 产物链:01 收集(collect) → 02 分组(organize) → 03 初稿(distill)
@@ -6,29 +6,6 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-
-use crate::frontmatter::FrontMatter;
-use crate::journal::{self, Entry};
-
-/// 收集归属 `topic` 的全部日志条目(按文件 + 时间排序)。
-pub fn collect_for_topic(workdir: &Path, topic: &str) -> Result<Vec<Entry>, String> {
-    let journals = journal::read_all(workdir)?;
-    let mut collected: Vec<Entry> = vec![];
-    for jf in &journals {
-        for (id, t) in &jf.fm.topics {
-            if t == topic {
-                if let Some(e) = jf.entries.iter().find(|e| &e.id == id) {
-                    collected.push(e.clone());
-                }
-            }
-        }
-    }
-    if collected.is_empty() {
-        return Err(format!("主题「{}」暂无归属条目,先用 material organize 分组", topic));
-    }
-    collected.sort_by(|a, b| (a.file.clone(), a.id.clone()).cmp(&(b.file.clone(), b.id.clone())));
-    Ok(collected)
-}
 
 /// 初稿提示词:过滤次要信息 + 统一表达(通用判据,不针对特定文本)。
 pub fn build_draft_prompt(topic: &str, aggregate: &str) -> String {
@@ -46,28 +23,20 @@ pub fn build_draft_prompt(topic: &str, aggregate: &str) -> String {
     )
 }
 
-/// 执行 distill:聚合 → LLM 过滤次要信息并统一表达 → 初稿 materials/<topic>.md。
+/// 执行 distill:读分组产物 groups/<topic>.md → LLM 过滤次要信息并统一表达
+/// → 初稿 materials/<topic>.md(产物 03)。
 pub fn distill(workdir: &Path, topic: &str) -> Result<PathBuf, String> {
-    let collected = collect_for_topic(workdir, topic)?;
+    let src = workdir.join("groups").join(format!("{}.md", topic));
+    let group = fs::read_to_string(&src)
+        .map_err(|e| format!("读分组 {}: {e}(先运行 material organize 生成分组)", src.display()))?;
+    let (fm, body) = crate::frontmatter::parse(&group);
 
-    // 聚合文本(LLM 输入,带来源)
-    let mut aggregate = String::new();
-    for e in &collected {
-        if !aggregate.is_empty() {
-            aggregate.push('\n');
-        }
-        aggregate.push_str(&format!("【{}】\n{}\n", e.reference(), e.text));
-    }
-
-    let prompt = build_draft_prompt(topic, &aggregate);
+    let prompt = build_draft_prompt(topic, &body);
     let draft = crate::organize::run_llm(&prompt)?;
 
-    // front matter:topic + sources
-    let mut fm = FrontMatter::default();
+    // front matter:沿用分组的 sources
+    let mut fm = fm.unwrap_or_default();
     fm.topic = Some(topic.to_string());
-    for e in &collected {
-        fm.sources.push(format!("journal/{}", e.reference()));
-    }
 
     let dir = workdir.join("materials");
     fs::create_dir_all(&dir).map_err(|e| format!("mkdir materials: {e}"))?;
@@ -88,37 +57,23 @@ mod tests {
         dir
     }
 
-    fn seed_journal(dir: &Path) {
-        let jdir = dir.join("journal");
-        fs::create_dir_all(&jdir).unwrap();
+    fn seed_groups(dir: &Path) {
+        let gdir = dir.join("groups");
+        fs::create_dir_all(&gdir).unwrap();
         fs::write(
-            jdir.join("2026-08-15.md"),
-            "---\ntopics:\n  \"09-30\": 宣传册\n  \"12-15\": 内容策略\n---\n\n## 09:30\n宣传册想法一\n\n## 12:15\n内容策略想法\n",
-        )
-        .unwrap();
-        fs::write(
-            jdir.join("2026-08-16.md"),
-            "---\ntopics:\n  \"08-00\": 宣传册\n---\n\n## 08:00\n宣传册想法二\n",
+            gdir.join("宣传册.md"),
+            "---\ntopic: 宣传册\nsources:\n  - journal/2026-08-15.md#09-30\n---\n\n宣传册想法一\n\n> 来源:journal/2026-08-15.md#09-30\n",
         )
         .unwrap();
     }
 
     #[test]
-    fn collect_for_topic_aggregates() {
-        let dir = tmpdir("agg");
-        seed_journal(&dir);
-        let entries = collect_for_topic(&dir, "宣传册").unwrap();
-        assert_eq!(entries.len(), 2);
-        assert_eq!(entries[0].reference(), "2026-08-15.md#09-30");
-        assert_eq!(entries[1].reference(), "2026-08-16.md#08-00");
-        let _ = fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn collect_empty_topic_errors() {
-        let dir = tmpdir("empty");
-        let out = collect_for_topic(&dir, "不存在");
+    fn distill_missing_group_errors() {
+        let dir = tmpdir("nogroup");
+        let out = distill(&dir, "宣传册");
         assert!(out.is_err());
+        let msg = out.unwrap_err();
+        assert!(msg.contains("organize"));
         let _ = fs::remove_dir_all(&dir);
     }
 

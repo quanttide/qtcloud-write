@@ -185,6 +185,27 @@ pub fn update_front_matter(
     Ok(())
 }
 
+/// 收集归属 `topic` 的全部日志条目(按文件 + 时间排序)。
+/// 无归属条目时返回错误(提示先 organize)。
+pub fn collect_for_topic(workdir: &Path, topic: &str) -> Result<Vec<Entry>, String> {
+    let journals = read_all(workdir)?;
+    let mut collected: Vec<Entry> = vec![];
+    for jf in &journals {
+        for (id, t) in &jf.fm.topics {
+            if t == topic {
+                if let Some(e) = jf.entries.iter().find(|e| &e.id == id) {
+                    collected.push(e.clone());
+                }
+            }
+        }
+    }
+    if collected.is_empty() {
+        return Err(format!("主题「{}」暂无归属条目,先用 material organize 分组", topic));
+    }
+    collected.sort_by(|a, b| (a.file.clone(), a.id.clone()).cmp(&(b.file.clone(), b.id.clone())));
+    Ok(collected)
+}
+
 /// 各日志条目 id → 主题(合并所有文件)。
 pub fn all_topic_assignments(journals: &[JournalFile]) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
