@@ -37,17 +37,12 @@ enum Commands {
     },
     /// O-Organize:LLM 从日志提取主题,更新日志 YAML 归属(保留人工标注)
     Organize,
-    /// D-Distill:按主题聚合日志条目 → materials/<主题>.md
-    Distill {
-        topic: String,
-        /// 聚合后调 LLM 删除次要信息,输出 <主题>-refined.md
-        #[arg(long)]
-        refine: bool,
-    },
-    /// E-Express:素材 → 成稿(默认自动判断写作意图)
+    /// D-Distill:按主题聚合日志条目并组织(LLM 删除次要信息)→ materials/<主题>.md
+    Distill { topic: String },
+    /// E-Express:基于提炼稿生成初稿 → <主题>-初稿.md
     Express {
         topic: String,
-        /// 写作目标(如"写一篇品牌故事");缺省自动根据内容判断
+        /// 定稿目标(如"写一篇品牌故事"):基于初稿生成定稿 → <主题>-定稿.md
         #[arg(long)]
         goal: Option<String>,
     },
@@ -81,19 +76,14 @@ fn run(cli: Cli) -> Result<(), String> {
             }
             Err(e) => Err(e),
         },
-        Commands::Distill { topic, refine } => {
-            if refine {
-                let path = narrative_engineering::distill::distill_refine(&workdir, &topic)?;
-                println!("已提炼:{}", path.display());
-            } else {
-                let path = narrative_engineering::distill::distill(&workdir, &topic)?;
-                println!("已生成:{}", path.display());
-            }
+        Commands::Distill { topic } => {
+            let path = narrative_engineering::distill::distill(&workdir, &topic)?;
+            println!("已组织:{}", path.display());
             Ok(())
         }
         Commands::Express { topic, goal } => {
             let path = narrative_engineering::express::express(&workdir, &topic, goal.as_deref())?;
-            println!("已成稿:{}", path.display());
+            println!("已生成:{}", path.display());
             Ok(())
         }
     }

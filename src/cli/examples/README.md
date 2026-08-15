@@ -4,16 +4,19 @@
 
 <https://github.com/quanttide/quanttide-fiction-of-founder/blob/main/职场言情/0_日志/创作日志1.md>
 
-**用途**:演示 `material` 命令的完整 CODE 工作流。原始文件见 [`fiction-of-founder/创作日志1.md`](fiction-of-founder/创作日志1.md)(一篇关于《职场言情》小说创作动机、潜意识与叙事疗法的创作谈)。
+**用途**:演示 `material` 命令的完整工作流。原始文件见 [`fiction-of-founder/创作日志1.md`](fiction-of-founder/创作日志1.md)(一篇关于《职场言情》小说创作动机、潜意识与叙事疗法的创作谈)。
 
-## CODE 语义
+## 四个命令 · 四个阶段
 
-| 阶段 | 命令 | 语义 |
-|------|------|------|
-| **C**ollect | `material collect` | 收集:从文本或**链接**获得内容,追加到日志 |
-| **O**rganize | `material organize` | 整理:根据主题分组和标记(LLM 提取 → 日志 YAML 归属,保留人工标注) |
-| **D**istill | `material distill [--refine]` | 提取:按主题聚合条目;`--refine` 删除次要信息 |
-| **E**xpress | `material express [--goal]` | 表达:根据写作目标判断;缺省**自动根据内容判断写作意图** |
+| 阶段 | 命令 | 语义 | 产物 |
+|------|------|------|------|
+| **收集** | `material collect [--url]` | 从文本或链接获得内容,条目化 + YAML 标注为**初步加工版本** | `journal/YYYY-MM-DD.md` |
+| **整理** | `material organize` | LLM 根据主题分组和标记(写入日志 YAML 归属,保留人工标注) | 日志 front matter |
+| **提取** | `material distill <主题>` | 聚合条目 → LLM **删除次要信息**(过程性叙述、用途信息、重复、情绪宣泄)→ 组织稿 | `materials/<主题>.md` |
+| **表达** | `material express <主题>` | 基于组织稿生成**初稿**(自动判断写作意图) | `materials/<主题>-初稿.md` |
+| | `material express <主题> --goal <目标>` | 基于初稿生成**定稿**(按写作目标) | `materials/<主题>-定稿.md` |
+
+产物链:收集(01)→ 组织(03)→ 初稿(04)→ 定稿(05)。
 
 ## 工作流演示
 
@@ -23,44 +26,29 @@ material collect --url "https://raw.githubusercontent.com/quanttide/quanttide-fi
 
 # 2. 整理 — 根据主题分组和标记(需 DEEPSEEK_API_KEY)
 material organize
-# → journal/YYYY-MM-DD.md 的 YAML front matter 写入条目归属:
+# → 日志 YAML front matter 写入归属:
 #   ---
 #   topics:
 #     "创作日志1": 创作动机
 
-# 3. 提取 — 删除次要信息
-material distill 创作动机            # 聚合 → materials/创作动机.md
-material distill 创作动机 --refine   # 提炼 → materials/创作动机-refined.md
+# 3. 提取 — 删除次要信息(通用判据:过程叙述/用途信息/重复/情绪宣泄)
+material distill 创作动机
+# → materials/创作动机.md(组织稿)
 
-# 4. 表达 — 根据写作目标判断(默认自动判断写作意图)
-material express 创作动机                                   # 自动判断意图 → materials/创作动机-成稿.md
-material express 创作动机 --goal "写一篇品牌故事"             # 指定写作目标
-```
-
-## 产物结构
-
-```
-<workdir>/
-├── journal/
-│   └── YYYY-MM-DD.md        # 日志:## 条目 + YAML 归属(front matter)
-└── materials/
-    ├── 创作动机.md           # distill 聚合稿
-    ├── 创作动机-refined.md   # distill --refine 提炼稿(删除次要信息)
-    └── 创作动机-成稿.md       # express 成稿
+# 4. 表达 — 初稿(自动判断写作意图)与定稿(按目标)
+material express 创作动机
+# → materials/创作动机-初稿.md
+material express 创作动机 --goal "写一篇用于公司账号发布的品牌故事"
+# → materials/创作动机-定稿.md
 ```
 
 ## 案例产物(实测归档)
 
-以下文件为用本案例真实运行 `material` 全流程的产物(LLM 提取主题为「创作心路」):
+| 文件 | 生成命令 | 说明 |
+|------|----------|------|
+| [`01-journal-收集.md`](fiction-of-founder/01-journal-收集.md) | `collect --url` + `organize` | 收集的初步加工版本:日志条目 + YAML 归属 |
+| [`03-distill-组织.md`](fiction-of-founder/03-distill-组织.md) | `distill 创作动机` | 组织稿:结构化要点,次要信息已删除(无用途/渠道类残留) |
+| [`04-express-初稿.md`](fiction-of-founder/04-express-初稿.md) | `express 创作动机` | 初稿:自动判断写作意图 → 第一人称创作谈 |
+| [`05-express-定稿.md`](fiction-of-founder/05-express-定稿.md) | `express 创作动机 --goal "写一篇用于公司账号发布的品牌故事"` | 定稿:按目标基于初稿生成品牌故事 |
 
-| 文件 | 来源 | 说明 |
-|------|------|------|
-| [`01-journal-创作日志1.md`](fiction-of-founder/01-journal-创作日志1.md) | `collect --url` + `organize` | 日志条目 + YAML 归属(`"创作日志1": 创作心路`) |
-| [`02-distill-聚合.md`](fiction-of-founder/02-distill-聚合.md) | `distill 创作心路` | 按主题聚合,含来源引用 |
-| [`03-distill-提炼.md`](fiction-of-founder/03-distill-提炼.md) | `distill 创作心路 --refine` | 删除次要信息后的结构化要点(60 行 vs 聚合 302 行) |
-| [`04-express-自动意图.md`](fiction-of-founder/04-express-自动意图.md) | `express 创作心路` | 自动判断写作意图 → 第一人称创作谈 |
-| [`05-express-品牌故事.md`](fiction-of-founder/05-express-品牌故事.md) | `express 创作心路 --goal "写一篇用于公司账号发布的品牌故事"` | 指定目标 → 品牌故事文案 |
-
-> 注意:`express` 输出固定为 `<主题>-成稿.md`,带 `--goal` 会覆盖无目标版本,需要保留多个版本时先另存。
-
-> 环境变量 `DEEPSEEK_API_KEY` 由 `organize`/`distill --refine`/`express` 读取(经 quanttide-agent 调 DeepSeek);`collect`/`distill`(聚合)为纯本地操作。
+> 环境变量 `DEEPSEEK_API_KEY` 由 `organize`/`distill`/`express` 读取(经 quanttide-agent 调 DeepSeek);`collect` 为纯本地操作。
