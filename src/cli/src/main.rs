@@ -1,10 +1,11 @@
 //! material — 写作素材收集与整理 CLI(CODE 循环)。
 //!
 //! 用法:
-//!   material collect "想法"      # C-Capture:记录到今日日志
-//!   material organize            # O-Organize:LLM 提取主题 → 更新日志 YAML 归属
-//!   material distill <主题>       # D-Distill:聚合条目 → materials/<主题>.md
-//!   material express <主题>       # E-Express:v2 预留
+//!   material collect "想法"                     # C-Capture:记录到今日日志
+//!   material collect --url <链接> [--title 标题]  # C-Capture:从链接获得内容
+//!   material organize                           # O-Organize:LLM 提取主题 → 更新日志 YAML 归属
+//!   material distill <主题> [--refine]           # D-Distill:聚合条目;--refine 删除次要信息
+//!   material express <主题> [--goal 写作目标]      # E-Express:素材 → 成稿(默认自动判断意图)
 
 use std::path::PathBuf;
 
@@ -23,24 +24,52 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// C-Capture:把想法记录到今日日志
-    Collect { text: String },
+    /// C-Capture:把想法记录到今日日志(文本或 --url 链接)
+    Collect {
+        /// 想法文本(与 --url 二选一)
+        text: Option<String>,
+        /// 从链接获得内容作为条目
+        #[arg(long)]
+        url: Option<String>,
+        /// 条目标题(默认:URL 文件名 / 当前时间)
+        #[arg(long)]
+        title: Option<String>,
+    },
     /// O-Organize:LLM 从日志提取主题,更新日志 YAML 归属(保留人工标注)
     Organize,
     /// D-Distill:按主题聚合日志条目 → materials/<主题>.md
-    Distill { topic: String },
-    /// E-Express:素材 → 成稿(v2 预留)
-    Express { topic: String },
+    Distill {
+        topic: String,
+        /// 聚合后调 LLM 删除次要信息,输出 <主题>-refined.md
+        #[arg(long)]
+        refine: bool,
+    },
+    /// E-Express:素材 → 成稿(默认自动判断写作意图)
+    Express {
+        topic: String,
+        /// 写作目标(如"写一篇品牌故事");缺省自动根据内容判断
+        #[arg(long)]
+        goal: Option<String>,
+    },
 }
 
 fn run(cli: Cli) -> Result<(), String> {
     let workdir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     match cli.command {
-        Commands::Collect { text } => {
-            let path = narrative_engineering::journal::collect(&workdir, &text)?;
-            println!("已记录:{}", path.display());
-            Ok(())
-        }
+        Commands::Collect { text, url, title } => match (text, url) {
+            (Some(text), None) => {
+                let path = narrative_engineering::journal::collect(&workdir, &text)?;
+                println!("已记录:{}", path.display());
+                Ok(())
+            }
+            (None, Some(url)) => {
+                let (path, title) =
+                    narrative_engineering::journal::collect_from_url(&workdir, &url, title.as_deref())?;
+                println!("已从链接获得并记录:{} (条目: {})", path.display(), title);
+                Ok(())
+            }
+            _ => Err("collect 需要提供想法文本,或 --url 链接(二选一)".into()),
+        },
         Commands::Organize => match narrative_engineering::organize::organize(&workdir) {
             Ok(0) => {
                 println!("日志中暂无未标注条目");
@@ -52,13 +81,19 @@ fn run(cli: Cli) -> Result<(), String> {
             }
             Err(e) => Err(e),
         },
-        Commands::Distill { topic } => {
-            let path = narrative_engineering::distill::distill(&workdir, &topic)?;
-            println!("已生成:{}", path.display());
+        Commands::Distill { topic, refine } => {
+            if refine {
+                let path = narrative_engineering::distill::distill_refine(&workdir, &topic)?;
+                println!("已提炼:{}", path.display());
+            } else {
+                let path = narrative_engineering::distill::distill(&workdir, &topic)?;
+                println!("已生成:{}", path.display());
+            }
             Ok(())
         }
-        Commands::Express { topic } => {
-            println!("express 为 v2 预留,尚未实现(topic={})", topic);
+        Commands::Express { topic, goal } => {
+            let path = narrative_engineering::express::express(&workdir, &topic, goal.as_deref())?;
+            println!("已成稿:{}", path.display());
             Ok(())
         }
     }

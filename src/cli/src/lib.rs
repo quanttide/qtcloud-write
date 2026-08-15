@@ -5,6 +5,7 @@
 // journal / organize / distill 模块,CLI 入口为 `material` binary。
 
 pub mod distill;
+pub mod express;
 pub mod frontmatter;
 pub mod journal;
 pub mod organize;

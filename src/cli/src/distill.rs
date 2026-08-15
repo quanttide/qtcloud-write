@@ -54,6 +54,23 @@ pub fn distill(workdir: &Path, topic: &str) -> Result<PathBuf, String> {
     Ok(path)
 }
 
+/// 执行 distill 提炼:先聚合,再调 LLM 删除次要信息,输出提炼稿
+/// `materials/<topic>-refined.md`(聚合文件保留,人工可对比)。
+pub fn distill_refine(workdir: &Path, topic: &str) -> Result<PathBuf, String> {
+    let base = distill(workdir, topic)?;
+    let material = fs::read_to_string(&base).map_err(|e| format!("读聚合稿: {e}"))?;
+    let prompt = format!(
+        "以下是从日志聚合的写作素材(主题:{})。\n\
+         请删除次要信息、保留要点,输出提炼后的素材(markdown,与素材同语言)。\n\
+         只输出提炼结果,不要解释。\n\n素材:\n{}",
+        topic, material
+    );
+    let refined = crate::organize::run_llm(&prompt)?;
+    let path = workdir.join("materials").join(format!("{}-refined.md", topic));
+    fs::write(&path, refined).map_err(|e| format!("write {}: {e}", path.display()))?;
+    Ok(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

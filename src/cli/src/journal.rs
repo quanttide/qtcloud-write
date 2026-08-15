@@ -46,11 +46,39 @@ pub fn journal_dir(workdir: &Path) -> PathBuf {
 
 /// C-Capture:把一条想法追加到今日日志(自动 ## HH:MM 条目)。
 pub fn collect(workdir: &Path, text: &str) -> Result<PathBuf, String> {
+    let title = chrono::Local::now().format("%H:%M").to_string();
+    append_entry(workdir, &title, text)
+}
+
+/// C-Capture:从链接(URL)获得内容,作为一条条目追加到今日日志。
+/// 标题默认取 URL 文件名(去 .md 扩展名),可用 `title` 覆盖。
+pub fn collect_from_url(
+    workdir: &Path,
+    url: &str,
+    title: Option<&str>,
+) -> Result<(PathBuf, String), String> {
+    let body = ureq::get(url)
+        .call()
+        .map_err(|e| format!("下载失败: {e}"))?
+        .into_string()
+        .map_err(|e| format!("读取响应失败: {e}"))?;
+    let default_title = url
+        .rsplit('/')
+        .next()
+        .unwrap_or("导入")
+        .trim_end_matches(".md")
+        .to_string();
+    let title = title.unwrap_or(&default_title).to_string();
+    let path = append_entry(workdir, &title, &body)?;
+    Ok((path, title))
+}
+
+/// 追加一条条目到今日日志;同标题多条时标题追加序号(`## 创作日志1-2`)。
+fn append_entry(workdir: &Path, title: &str, text: &str) -> Result<PathBuf, String> {
     let dir = journal_dir(workdir);
     fs::create_dir_all(&dir).map_err(|e| format!("mkdir journal: {e}"))?;
     let now = chrono::Local::now();
     let path = dir.join(format!("{}.md", now.format("%Y-%m-%d")));
-    let title = now.format("%H:%M").to_string();
 
     let mut content = String::new();
     let mut existing_ids: Vec<String> = vec![];
@@ -63,14 +91,13 @@ pub fn collect(workdir: &Path, text: &str) -> Result<PathBuf, String> {
         }
         content.push('\n');
     }
-    // 标题带序号(同分钟多条):`## 19:53`、`## 19:53-2`、`## 19:53-3`…
-    let base = now.format("%H-%M").to_string();
+    let base_id = title.replace(':', "-");
     let same = existing_ids
         .iter()
-        .filter(|id| **id == base || id.starts_with(&format!("{}-", base)))
+        .filter(|id| **id == base_id || id.starts_with(&format!("{}-", base_id)))
         .count();
     let title = if same == 0 {
-        title
+        title.to_string()
     } else {
         format!("{}-{}", title, same + 1)
     };

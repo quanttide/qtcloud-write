@@ -8,6 +8,7 @@ description = "量潮叙事工程实验室 — 写作工作流引擎(material �
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
 quanttide-agent = "0.1"
+ureq = "2"
 
 [[bin]]
 name = "material"
