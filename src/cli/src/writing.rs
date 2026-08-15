@@ -28,31 +28,20 @@ impl WritingStatus {
     }
 }
 
-/// 写作形态 — 同一生命周期下的不同产物类型。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WritingKind {
-    /// 文章:单篇文本
-    Article,
-    /// 书:多章节长文本
-    Book,
-}
-
 /// 写作 — 写作云的基本单位(聚合根)。
 ///
 /// 对应文档云的基本单位 `Document`:写作云的产物是"写作",而非"文档"。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Writing {
     pub id: String,
-    pub kind: WritingKind,
     pub status: WritingStatus,
 }
 
 impl Writing {
     /// 新建写作,状态从 `Material` 开始。
-    pub fn new(id: impl Into<String>, kind: WritingKind) -> Self {
+    pub fn new(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
-            kind,
             status: WritingStatus::Material,
         }
     }

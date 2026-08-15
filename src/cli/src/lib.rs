@@ -8,4 +8,4 @@
 
 pub mod writing;
 
-pub use writing::{Writing, WritingKind, WritingStatus};
+pub use writing::{Writing, WritingStatus};
