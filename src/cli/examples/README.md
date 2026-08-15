@@ -49,4 +49,18 @@ material express 创作动机 --goal "写一篇品牌故事"             # 指�
     └── 创作动机-成稿.md       # express 成稿
 ```
 
+## 案例产物(实测归档)
+
+以下文件为用本案例真实运行 `material` 全流程的产物(LLM 提取主题为「创作心路」):
+
+| 文件 | 来源 | 说明 |
+|------|------|------|
+| [`01-journal-创作日志1.md`](fiction-of-founder/01-journal-创作日志1.md) | `collect --url` + `organize` | 日志条目 + YAML 归属(`"创作日志1": 创作心路`) |
+| [`02-distill-聚合.md`](fiction-of-founder/02-distill-聚合.md) | `distill 创作心路` | 按主题聚合,含来源引用 |
+| [`03-distill-提炼.md`](fiction-of-founder/03-distill-提炼.md) | `distill 创作心路 --refine` | 删除次要信息后的结构化要点(60 行 vs 聚合 302 行) |
+| [`04-express-自动意图.md`](fiction-of-founder/04-express-自动意图.md) | `express 创作心路` | 自动判断写作意图 → 第一人称创作谈 |
+| [`05-express-品牌故事.md`](fiction-of-founder/05-express-品牌故事.md) | `express 创作心路 --goal "写一篇用于公司账号发布的品牌故事"` | 指定目标 → 品牌故事文案 |
+
+> 注意:`express` 输出固定为 `<主题>-成稿.md`,带 `--goal` 会覆盖无目标版本,需要保留多个版本时先另存。
+
 > 环境变量 `DEEPSEEK_API_KEY` 由 `organize`/`distill --refine`/`express` 读取(经 quanttide-agent 调 DeepSeek);`collect`/`distill`(聚合)为纯本地操作。
