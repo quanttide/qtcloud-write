@@ -57,7 +57,9 @@ pub fn collect_from_url(
     url: &str,
     title: Option<&str>,
 ) -> Result<(PathBuf, String), String> {
-    let body = ureq::get(url)
+    let agent = build_agent()?;
+    let body = agent
+        .get(url)
         .call()
         .map_err(|e| format!("下载失败: {e}"))?
         .into_string()
@@ -71,6 +73,31 @@ pub fn collect_from_url(
     let title = title.unwrap_or(&default_title).to_string();
     let path = append_entry(workdir, &title, &body)?;
     Ok((path, title))
+}
+
+/// 构建 HTTP agent:读取环境代理(https_proxy/http_proxy/all_proxy,仅 http(s) 代理),
+/// 并设置连接/总超时,避免直连挂起。
+fn build_agent() -> Result<ureq::Agent, String> {
+    let mut builder = ureq::AgentBuilder::new()
+        .timeout_connect(std::time::Duration::from_secs(15))
+        .timeout(std::time::Duration::from_secs(120));
+    for var in [
+        "https_proxy",
+        "HTTPS_PROXY",
+        "http_proxy",
+        "HTTP_PROXY",
+        "all_proxy",
+        "ALL_PROXY",
+    ] {
+        if let Ok(v) = std::env::var(var) {
+            if v.starts_with("http://") || v.starts_with("https://") {
+                let proxy = ureq::Proxy::new(v).map_err(|e| format!("代理解析失败: {e}"))?;
+                builder = builder.proxy(proxy);
+                break;
+            }
+        }
+    }
+    Ok(builder.build())
 }
 
 /// 追加一条条目到今日日志;同标题多条时标题追加序号(`## 创作日志1-2`)。

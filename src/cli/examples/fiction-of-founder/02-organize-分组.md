@@ -1,5 +1,5 @@
 ---
-topic: 创作心路
+topic: 创作动机
 sources:
   - journal/2026-08-15.md#创作日志1
 ---
