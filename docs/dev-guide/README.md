@@ -4,11 +4,14 @@ material CLI(写作素材收集与整理)从设计到落地的完整过程沉淀
 
 | 文档 | 主题 | 核心经验 |
 |------|------|----------|
+| [narrative-engineering-essence.md](narrative-engineering-essence.md) | 叙事工程精髓 | 被否定的六条认知;叙事是被组织出来的(取舍/分层/重构) |
 | [pipeline-design.md](pipeline-design.md) | 产物链设计 | 四命令四阶段、中间产物必须真实、质量上限在上游、初稿必须有用 |
 | [llm-prompting.md](llm-prompting.md) | LLM 提示词 | 判据通用化、从严删除从宽保留、成文而非顺述、重构而非修补 |
 | [engineering.md](engineering.md) | 工程实践 | 代理坑、超时、幂等、依赖最少化、命名隐喻、实测验证 |
 
 ## 十条关键经验(速览)
+
+0. **叙事工程 ≠ 让 AI 写得好**:叙事是被组织出来的(取舍/分层/重构),工具链里没有"生成",只有"组织"——详见 [narrative-engineering-essence.md](narrative-engineering-essence.md)。
 
 1. **一个命令一个阶段一个产物**:产物编号稳定(01 收集 → 02 分组 → 03 初稿 → 04 定稿),归档与回溯成本最低。
 2. **中间产物必须真实存在**:organize 曾只写 YAML 标注导致"分组形同虚设"——直到生成 `groups/` 文件成为 distill 的输入,环节才名副其实。
