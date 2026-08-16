@@ -8,10 +8,11 @@
 library;
 
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io' show HttpClient, Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart' show IOClient;
 
 import '../models/analysis.dart';
 
@@ -52,7 +53,38 @@ class LLMClient {
   final http.Client _client;
 
   LLMClient({required this.config, http.Client? client})
-      : _client = client ?? http.Client();
+      : _client = client ?? _createClient();
+
+  /// 构建 HTTP client：读取环境代理（https_proxy/http_proxy/all_proxy，
+  /// 仅 http(s) 代理，与 CLI build_agent 对齐），避免直连挂起。
+  /// Web 端无 dart:io 环境变量，直接使用默认 client。
+  static http.Client _createClient() {
+    if (kIsWeb) return http.Client();
+    final proxy = _envProxy();
+    if (proxy == null) return http.Client();
+    final io = HttpClient();
+    io.findProxy = (uri) => 'PROXY $proxy';
+    io.connectionTimeout = const Duration(seconds: 15);
+    return IOClient(io);
+  }
+
+  static String? _envProxy() {
+    for (final name in [
+      'https_proxy',
+      'HTTPS_PROXY',
+      'http_proxy',
+      'HTTP_PROXY',
+      'all_proxy',
+      'ALL_PROXY',
+    ]) {
+      final v = Platform.environment[name];
+      if (v != null && (v.startsWith('http://') || v.startsWith('https://'))) {
+        // findProxy 需要裸 host:port（不带 scheme）
+        return v.replaceFirst(RegExp(r'^https?://'), '');
+      }
+    }
+    return null;
+  }
 
   /// 分析文本结构，返回结构化整理结果。
   /// 协议约束：输出纯 JSON，绝不返回改写后的文本。
@@ -92,6 +124,37 @@ class LLMClient {
       analyzedAt: DateTime.now(),
       model: config.model,
     );
+  }
+
+  /// 四命令工作流通用调用：单 user 消息，温度 0.1（与 CLI run_llm 一致），
+  /// 返回原始文本（初稿/定稿/主题归属，非 JSON 结构分析）。
+  Future<String> completeText(String prompt) async {
+    final body = jsonEncode({
+      'model': config.model,
+      'messages': [
+        {'role': 'user', 'content': prompt},
+      ],
+      'temperature': 0.1,
+      'stream': false,
+    });
+
+    final resp = await _client
+        .post(
+          Uri.parse('${config.baseUrl}/chat/completions'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (config.apiKey.isNotEmpty) 'Authorization': 'Bearer ${config.apiKey}',
+          },
+          body: body,
+        )
+        .timeout(const Duration(seconds: 180));
+
+    if (resp.statusCode != 200) {
+      throw Exception('LLM 请求失败: HTTP ${resp.statusCode} ${resp.body}');
+    }
+
+    final decoded = jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
+    return (decoded['choices'] as List).first['message']['content'] as String;
   }
 
   /// 统一 chat 请求：发送 system+user，返回解析后的 JSON。

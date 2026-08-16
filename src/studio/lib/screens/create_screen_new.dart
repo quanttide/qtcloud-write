@@ -10,9 +10,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/analyze/analyze_bloc.dart';
 import '../blocs/editor/editor_bloc.dart';
 import '../blocs/workflow/workflow_bloc.dart';
+import '../config.dart';
 import '../models/analysis.dart';
 import '../models/chapter.dart';
 import '../models/workflow.dart';
+import '../widgets/workflow_actions_panel.dart';
 import 'analysis_panel.dart';
 import 'annotation_overlay.dart';
 
@@ -64,6 +66,8 @@ class _CreateScreenNewState extends State<CreateScreenNew> {
           Expanded(
             child: _buildChapterList(context),
           ),
+          // 流程操作（复现 CLI 四命令）
+          WorkflowActionsPanel(workdir: writeDataPath),
         ],
       ),
     );

@@ -1,7 +1,7 @@
 name: qtcloud_write_studio
 description: AI-native writing studio for qtcloud-write(写作云 AI 原生写作编辑器).
 publish_to: none
-version: 0.1.0-alpha.4
+version: 0.1.0-alpha.5
 
 environment:
   sdk: ^3.11.5

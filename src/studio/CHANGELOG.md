@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.0-alpha.5] - 2026-08-16
+
+- **客户端复现 CLI 四命令流程**：流程操作面板（左侧导航底部）直接执行
+  collect / organize / distill / express，与 CLI 共享同一数据目录
+- 移植 CLI 工作流逻辑到 Dart：`lib/workflow/`（frontmatter/journal/organize/distill/express），
+  提示词与产物格式与 CLI 完全一致（零改原文、YAML front matter、`-定稿` 后缀）
+- `LLMClient.completeText`：单 user 消息、温度 0.1（与 CLI run_llm 对齐）；
+  HTTP 客户端读取环境代理（与 CLI build_agent 对齐）
+- 流程操作：想法输入 + 收集；LLM 分组（更新归属 + 生成 groups/）；
+  选中 02_分组 → 生成初稿；选中 03_初稿 → 生成定稿
+- 测试：38 单元测试（含四命令端到端 fake LLM）+ 1 真实 LLM 集成测试
+  （`DEEPSEEK_API_KEY` 未设置时自动跳过）
+
 ## [0.1.0-alpha.4] - 2026-08-16
 
 - **方向替换**：丢弃 3R 评审工作台（review/reflect/rewrite），移植 qtfounder 新版 AI 原生写作编辑器

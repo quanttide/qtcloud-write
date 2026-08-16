@@ -21,12 +21,17 @@ flutter run -d chrome
 
 ## 工作流（对齐 CLI 四命令）
 
-| 阶段 | 目录 | 语义 |
-|------|------|------|
-| 01_收集 | `journal/` | 素材收集（日志条目，AI 灵感分解） |
-| 02_分组 | `groups/` | 主题分组（灵感采纳 → 分组文件） |
-| 03_初稿 | `materials/` | 成文（不含定稿） |
-| 04_定稿 | `materials/` | 定稿（`<主题>-定稿.md` 后缀区分） |
+客户端在左侧导航底部提供**流程操作面板**，直接复现 CLI 四命令（共享同一数据目录）：
+
+| 步骤 | 客户端操作 | CLI 对应 | 产物 |
+|------|-----------|----------|------|
+| 01 收集 | 输入想法 → 收集 | `material collect` | `journal/YYYY-MM-DD.md`（`## HH:MM` 条目） |
+| 02 分组 | LLM 分组 | `material organize` | 日志 YAML 归属 + `groups/<主题>.md` |
+| 03 初稿 | 选中 02_分组 章节 → 生成初稿 | `material distill` | `materials/<主题>.md` |
+| 04 定稿 | 选中 03_初稿 章节 → 生成定稿 | `material express` | `materials/<主题>-定稿.md` |
+
+核心原则：**AI 只产出结构（元数据），绝不改写原文**——分析结果存于 `.analysis/` 目录，
+删除即完全还原；标注是视图，不是内容。工作流产物为 git 管理的 Markdown。
 
 ## 测试
 
@@ -54,7 +59,15 @@ lib/
 │   ├── file_chapter_repository.dart # 文件实现（CLI 目录映射）
 │   └── analysis_repository.dart     # .analysis/ 缓存
 ├── services/
-│   └── llm_client.dart              # DeepSeek API（DEEPSEEK_API_KEY）
+│   └── llm_client.dart              # DeepSeek API（DEEPSEEK_API_KEY，环境代理）
+├── workflow/                        # CLI 四命令的 Dart 移植（客户端复现）
+│   ├── frontmatter.dart             # YAML front matter 解析/渲染
+│   ├── journal.dart                 # collect 记录 + 条目解析
+│   ├── organize.dart                # LLM 主题分组 + groups/ 生成
+│   ├── distill.dart                 # 过滤杂质 + 成文 → 初稿
+│   └── express.dart                 # 按目标重构 → 定稿
+├── widgets/
+│   └── workflow_actions_panel.dart  # 流程操作面板（四命令入口）
 └── screens/
     ├── create_screen_new.dart       # 三栏编辑器（章节树 + 编辑区 + AI 面板）
     ├── annotation_overlay.dart      # 只读标注层（拆分线/场景色条）

@@ -24,6 +24,9 @@ class _FakeLLMClient implements LLMClient {
   List<String> lastPreviousSuggestions = const [];
 
   @override
+  Future<String> completeText(String prompt) async => '';
+
+  @override
   Future<ChapterAnalysis> analyzeStructure({
     required String chapterId,
     required String chapterPath,
