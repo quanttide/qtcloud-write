@@ -21,29 +21,32 @@
 - `style.samples` 字段暂未接入 prompt
 - 集成测试跳过仅检查 env var，不区分"没 Key"和"Key 错误"
 
-## src/studio — 写作评审 Flutter 前端
+## src/studio — AI 原生写作编辑器 (Flutter)
 
-**定位**：写作评审桌面客户端（Linux）。
+**定位**：写作云桌面端写作工作台（Linux），与 CLI 四命令共享数据目录。
 
 **现状**：
-- 3R 工作台：三栏布局、编辑器、Markdown 预览、评审面板
-- 评审走统一 `AnalysisService` 接口，调 Provider API
-- `RemoteAnalysisService`（HTTP）+ `LocalAnalysisService`（无分析，仅展示占位）
-- 125 单元测试 + 6 集成测试
+- 四阶段工作流：01_收集（journal/）→ 02_分组（groups/）→ 03_初稿（materials/）→ 04_定稿（materials/-定稿.md）
+- 三栏编辑器：章节阶段树 + 纯文本编辑区 + 只读标注层（拆分线/场景色条）+ AI 整理面板
+- AI 只产元数据不改写原文：`.analysis/` 缓存删除即还原，负反馈 + 缓存复用
+- **客户端复现 CLI 四命令**：流程操作面板执行 collect/organize/distill/express
+  （`lib/workflow/` 为 CLI 逻辑的 Dart 移植，提示词与产物格式一致）
+- LLM：DeepSeek API（`DEEPSEEK_API_KEY`，环境代理自动读取）
+- 38 单元测试 + 1 真实 LLM 集成测试（无 key 自动跳过）
 
 **未完成**：
-- 所有评审结果显示的是占位文字，未真实对接 Provider 返回的 dimension_alignments
-- 样本文本硬编码在 `writing_review_cubit.dart` 中
-- Reflect/Inspire 标签页无 UI（仅占位文字）
+- 示例工作目录尚无真实数据（需 CLI 生成）
+- 章节搜索 / 预览 / 全屏按钮为空壳
+- 阶段推进动作（03 → 04 移动）未接 UI
 
 ## src/cli — 写作工作流引擎 (Rust)
 
-**定位**：壳保留。旧实现(范畴论路线)已移除,新模型 `material → outline → draft → final` 待实现。
+**定位**：四命令工作流引擎：collect（收集）→ organize（分组）→ distill（初稿）→ express（定稿）。
 
 **现状**：
-- 仅保留项目骨架(Cargo.toml、lib.rs 占位),无实现代码
-- 旧实现完整版本见 git 历史 `b47f0b6`
-- 与 provider / studio 未集成
+- 四命令全实现：journal/ 收集、groups/ 分组、materials/ 初稿与定稿
+- 产物为 git 管理的 Markdown + YAML front matter（标注=元数据，整理=操作文件）
+- 与 studio 共享同一数据目录（studio 的 FileChapterRepository 映射 CLI 产物目录）
 
 ## 已知架构问题
 
