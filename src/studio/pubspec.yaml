@@ -1,7 +1,7 @@
 name: qtcloud_write_studio
-description: Writing review studio for qtcloud-write.
+description: AI-native writing studio for qtcloud-write(写作云 AI 原生写作编辑器).
 publish_to: none
-version: 0.1.0-alpha.3
+version: 0.1.0-alpha.4
 
 environment:
   sdk: ^3.11.5
@@ -10,7 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
-  flutter_markdown: ^0.7.6
+  equatable: ^2.0.5
+  path: ^1.8.0
   http: ^1.6.0
 
 dev_dependencies:

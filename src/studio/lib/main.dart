@@ -1,65 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'blocs/writing_review_cubit.dart';
-import 'services/analysis_service.dart';
-import 'services/local_analysis_service.dart';
-import 'services/remote_analysis_service.dart';
-import 'themes/writing_theme.dart';
-import 'widgets/writing_workbench.dart';
+
+import 'blocs/app_bloc_provider.dart';
+import 'screens/create_screen_new.dart';
 
 void main() {
-  final providerUrl =
-      const String.fromEnvironment('PROVIDER_URL', defaultValue: 'http://localhost:9000');
-  final service = providerUrl.isNotEmpty
-      ? RemoteAnalysisService(providerUrl) as AnalysisService
-      : LocalAnalysisService() as AnalysisService;
-  runApp(LabApp(service: service));
+  runApp(const WriteStudioApp());
 }
 
-class LabApp extends StatelessWidget {
-  final AnalysisService service;
-  const LabApp({super.key, required this.service});
+/// 写作云 AI 原生写作编辑器（四命令工作流：收集 → 分组 → 初稿 → 定稿）
+class WriteStudioApp extends StatelessWidget {
+  const WriteStudioApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '写作云 Lab',
-      debugShowCheckedModeBanner: false,
-      theme: WritingTheme.dark,
-      home: AppShell(service: service),
-    );
-  }
-}
-
-class AppShell extends StatefulWidget {
-  final AnalysisService service;
-  const AppShell({super.key, required this.service});
-
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> {
-  late final WritingReviewCubit _writingCubit;
-
-  @override
-  void initState() {
-    super.initState();
-    _writingCubit = WritingReviewCubit(service: widget.service);
-    _writingCubit.loadSample();
-  }
-
-  @override
-  void dispose() {
-    _writingCubit.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _writingCubit,
-      child: const WritingWorkbench(),
+    return AppBlocProvider(
+      child: MaterialApp(
+        title: '写作云 Studio',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF4F46E5),
+            surface: Colors.white,
+            brightness: Brightness.light,
+          ),
+          scaffoldBackgroundColor: const Color(0xFFF1F5F9),
+          useMaterial3: true,
+        ),
+        home: const CreateScreenNew(),
+      ),
     );
   }
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0-alpha.4] - 2026-08-16
+
+- **方向替换**：丢弃 3R 评审工作台（review/reflect/rewrite），移植 qtfounder 新版 AI 原生写作编辑器
+- 核心原则：AI 只产出结构（元数据），绝不改写原文；`.analysis/` 缓存删除即还原
+- 四阶段工作流对齐 CLI 四命令：01_收集（journal/）→ 02_分组（groups/）→ 03_初稿（materials/）→ 04_定稿（materials/-定稿.md）
+- 三栏编辑器：章节阶段树 + 纯文本编辑区 + 只读标注层（拆分虚线/场景色条，点击跳行）+ AI 整理面板
+- 分阶段分析方法：01_收集 灵感分解（采纳 → 02_分组 原样摘录）；其他阶段 结构分析（标签/摘要/拆分建议/场景/归类建议）
+- 负反馈机制：忽略的建议注入下次 prompt 不再提出；分析缓存复用 + 强制刷新
+- 编辑器：3 秒防抖自动保存、去 Markdown 字数统计、脏标记、光标位置
+- LLM：DeepSeek API（`DEEPSEEK_API_KEY`），temperature 0.2，8k 截断，JSON 容错解析
+- 18 单元测试（bloc / repository / overlay / widget）
+
 ## [0.1.0-alpha.3] - 2026-06-03
 
 - 统一分析管线：`AnalysisService` 接口 + `RemoteAnalysisService` / `LocalAnalysisService`
